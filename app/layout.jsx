@@ -1,52 +1,47 @@
-import { Footer, Layout, Navbar, ThemeSwitch } from "nextra-theme-blog";
-import { Banner, Head, Search } from "nextra/components";
+import { Footer, Layout, Navbar } from "nextra-theme-docs";
+import { Banner, Head } from "nextra/components";
 import { getPageMap } from "nextra/page-map";
-import "nextra-theme-blog/style.css";
+import "nextra-theme-docs/style.css";
 
 export const metadata = {
-  title: "Blog Example",
+  // Define your metadata here
+  // For more information on metadata API, see: https://nextjs.org/docs/app/building-your-application/optimizing/metadata
 };
 
+const banner = <Banner storageKey="some-key">Nextra 4.0 is released 🎉</Banner>;
+const navbar = (
+  <Navbar
+    logo={<b>Nextra</b>}
+    // ... Your additional navbar options
+  />
+);
+const footer = <Footer>MIT {new Date().getFullYear()} © Nextra.</Footer>;
+
 export default async function RootLayout({ children }) {
-  const banner = (
-    <Banner storageKey="4.0-release">
-      🎉 Nextra 4.0 is released.{" "}
-      <a
-        href="#"
-        style={{
-          textDecoration: "underline",
-          textUnderlinePosition: "from-font",
-        }}
-      >
-        Read more →
-      </a>
-    </Banner>
-  );
-
   return (
-    <html lang="en" suppressHydrationWarning>
-      <Head backgroundColor={{ dark: "#0f172a", light: "#fefce8" }} />
+    <html
+      // Not required, but good for SEO
+      lang="en"
+      // Required to be set
+      dir="ltr"
+      // Suggested by `next-themes` package https://github.com/pacocoursey/next-themes#with-app
+      suppressHydrationWarning
+    >
+      <Head
+      // ... Your additional head options
+      >
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
       <body>
-        <Layout banner={banner}>
-          <Navbar pageMap={await getPageMap()}>
-            <Search />
-            <ThemeSwitch />
-          </Navbar>
-
+        <Layout
+          banner={banner}
+          navbar={navbar}
+          pageMap={await getPageMap()}
+          docsRepositoryBase="https://github.com/shuding/nextra/tree/main/docs"
+          footer={footer}
+          // ... Your additional layout options
+        >
           {children}
-
-          <Footer>
-            <abbr
-              title="This site and all its content are licensed under a Creative Commons Attribution-NonCommercial 4.0 International License."
-              style={{ cursor: "help" }}
-            >
-              CC BY-NC 4.0
-            </abbr>{" "}
-            {new Date().getFullYear()} © Dimitri POSTOLOV.
-            <a href="/feed.xml" style={{ float: "right" }}>
-              RSS
-            </a>
-          </Footer>
         </Layout>
       </body>
     </html>
