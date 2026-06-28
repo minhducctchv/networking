@@ -1,0 +1,5 @@
+_pagefind/
+.kiro/
+.vscode/
+.next/
+node_modules/
