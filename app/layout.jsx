@@ -8,7 +8,9 @@ export const metadata = {
   // For more information on metadata API, see: https://nextjs.org/docs/app/building-your-application/optimizing/metadata
 };
 
-const banner = <Banner storageKey="some-key">Nextra 4.0 is released 🎉</Banner>;
+const banner = (
+  <Banner storageKey="some-key">Wellcome to learn Networking</Banner>
+);
 const navbar = (
   <Navbar
     logo={<b>Nextra</b>}
@@ -30,9 +32,9 @@ export default async function RootLayout({ children }) {
       <Head
       // ... Your additional head options
       >
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" href="/network.png" />
       </Head>
-      <body>
+      <body suppressHydrationWarning>
         <Layout
           banner={banner}
           navbar={navbar}
