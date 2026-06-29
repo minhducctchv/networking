@@ -1,0 +1,58 @@
+# Tóm tắt Chương 1: Nền tảng mạng máy tính
+
+Chương này đã thiết lập bộ khung tư duy cho toàn khóa học. Dưới đây là các khái niệm chính theo từng bài, sau đó là bài tập ôn tập kết hợp nhiều bài.
+
+## Các khái niệm chính
+
+### Mạng máy tính là gì?
+
+- **Computer network** là tập hợp thiết bị kết nối để trao đổi dữ liệu; cần end system, medium và thiết bị trung gian.
+- **Protocol** quy định syntax, semantics và timing để các bên hiểu nhau.
+- Mô hình phân lớp giúp module hóa, tương tác và gỡ lỗi dễ hơn.
+
+### Mô hình OSI 7 tầng
+
+- OSI là **mô hình tham chiếu** 7 tầng: Physical, Data Link, Network, Transport, Session, Presentation, Application.
+- Mỗi tầng có mục đích, protocol ví dụ và quan hệ với tầng liền kề riêng.
+- Tầng thấp gần phần cứng, tầng cao gần ứng dụng.
+
+### Mô hình TCP/IP 4 tầng
+
+- TCP/IP gồm Application, Transport, Internet, Network Access.
+- Ánh xạ: Application = L5–L7, Transport = L4, Internet = L3, Network Access = L1–L2.
+- TCP/IP gộp tầng vì các chức năng đó đi cùng nhau trong thực tế; thiết kế "narrow waist" đặt IP làm điểm hội tụ.
+
+### Đóng gói & tháo gói dữ liệu
+
+- **Encapsulation**: mỗi tầng thêm header khi dữ liệu đi xuống; **de-encapsulation** gỡ header khi đi lên.
+- Tên PDU đổi theo tầng: **Data → Segment → Packet → Frame → Bits**.
+- Một tầng chỉ xử lý header của mình, không cần hiểu payload.
+
+### Chuyển mạch & Topology
+
+- **Circuit switching** dành đường riêng; **packet switching** chia sẻ đường — nền tảng của Internet.
+- Bốn topology: bus, star, ring, mesh, mỗi loại có đánh đổi riêng.
+- Phân loại theo phạm vi: LAN ⊂ MAN ⊂ WAN.
+
+## Bài tập ôn tập
+
+1. **(Lý thuyết — kết hợp "Mô hình OSI 7 tầng" + "Mô hình TCP/IP 4 tầng")** Vẽ bảng ánh xạ 7 tầng OSI sang 4 tầng TCP/IP. Với mỗi nhóm tầng OSI bị gộp lại trong TCP/IP, giải thích bằng một ví dụ protocol vì sao việc gộp đó hợp lý trong thực tế.
+
+2. **(Tình huống — kết hợp "Đóng gói & tháo gói dữ liệu" + "Mô hình OSI 7 tầng")** Một packet rời máy A đi tới máy B qua hai router. Mô tả điều gì xảy ra với **frame header** (L2) tại mỗi router, trong khi **IP header** (L3) thì được giữ ra sao. Giải thích vì sao đơn vị dữ liệu lại đổi tên giữa các tầng trong quá trình này.
+
+3. **(Tính toán — kết hợp "Đóng gói & tháo gói dữ liệu" + "Mạng máy tính là gì?")** Một ứng dụng HTTP gửi 500 byte nội dung. Dùng các header điển hình (TCP 20 byte, IP 20 byte, Ethernet header 14 byte + trailer 4 byte), tính kích thước frame đặt lên dây và tính tỉ lệ overhead (phần header) so với tổng kích thước frame.
+
+4. **(Tình huống — kết hợp "Chuyển mạch & Topology" + "Mạng máy tính là gì?")** Giải thích vì sao Internet chọn **packet switching** thay vì **circuit switching**, liên hệ tới ý tưởng chia sẻ tài nguyên của một computer network.
+
+<details>
+  <summary>Đáp án</summary>
+
+1. Ánh xạ: Application(TCP/IP) = L7+L6+L5; Transport = L4; Internet = L3; Network Access = L2+L1. Gộp L5–L7: HTTP tự quản lý phiên (cookie/`Connection`) và biểu diễn (`Content-Type`, `gzip`). Gộp L1–L2: chuẩn Ethernet định nghĩa cả tín hiệu (Physical) lẫn framing (Data Link) trong một công nghệ.
+
+2. Tại **mỗi router**, frame L2 cũ bị gỡ bỏ và một frame L2 mới được tạo cho chặng kế tiếp (MAC nguồn/đích thay đổi theo từng hop). Ngược lại, **IP header** (địa chỉ nguồn/đích) được giữ nguyên xuyên suốt (chỉ TTL giảm). Đơn vị đổi tên vì mỗi tầng bọc thêm header riêng: ở Network là **packet**, khi Data Link bọc lại để truyền qua một chặng thì thành **frame**.
+
+3. 500 + 20 + 20 + 14 + 4 = **558 byte**. Overhead = 58 byte header/trailer. Tỉ lệ = 58 / 558 ≈ **10.4%**.
+
+4. Vì một computer network có giá trị nhờ **chia sẻ tài nguyên**. Packet switching cho nhiều bên dùng chung liên kết hiệu quả (không giữ đường khi rảnh) và chịu lỗi tốt (packet đổi đường được), phù hợp với quy mô và tính đa dạng lưu lượng của Internet — trong khi circuit switching giữ đường riêng gây lãng phí băng thông.
+
+</details>

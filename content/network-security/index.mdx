@@ -1,0 +1,31 @@
+import { Cards } from "nextra/components";
+
+# Chương 7: Network Security
+
+Sau khi đã đi hết các tầng từ Physical tới Application (Chương 1–6), chương này nhìn lại toàn bộ ngăn xếp dưới một lăng kính mới: **network security** (an ninh mạng — bảo vệ tính bí mật, toàn vẹn và sẵn sàng của dữ liệu cùng hạ tầng mạng trước các hành vi tấn công). Bạn sẽ học những mối đe dọa phổ biến nhất và cách chúng hoạt động, cách **encryption** bảo vệ dữ liệu trên đường truyền, các lớp phòng thủ ở vành đai mạng như firewall và VPN, và cuối cùng là các nguyên tắc thiết kế giúp một hệ thống an toàn ngay từ kiến trúc. Mục tiêu là giúp bạn vừa hiểu kẻ tấn công làm gì, vừa biết người phòng thủ dựng hàng rào ra sao.
+
+## Mục tiêu học tập
+
+- Phân tích cách hoạt động, tác động và biện pháp **mitigation** (giảm thiểu) của ít nhất ba loại tấn công: **DDoS**, **man-in-the-middle (MITM)** và **spoofing**.
+- Giải thích **symmetric encryption**, **asymmetric encryption** và **TLS/SSL handshake**, cùng cách mỗi loại áp dụng vào truyền thông mạng.
+- So sánh các lớp phòng thủ vành đai: **firewall** (stateful vs stateless), **VPN** và **network access control (NAC/802.1X)**, nêu mục đích và một use case điển hình cho từng loại.
+- Áp dụng ít nhất ba nguyên tắc thiết kế mạng an toàn: **defense in depth**, **least privilege** và **network segmentation** (cùng **zero trust**).
+
+## Các bài học trong chương
+
+<Cards>
+  <Cards.Card title="Mối đe dọa mạng" href="/network-security/network-threats" />
+  <Cards.Card title="Mã hóa" href="/network-security/encryption" />
+  <Cards.Card
+    title="Phòng thủ vành đai"
+    href="/network-security/perimeter-defense"
+  />
+  <Cards.Card
+    title="Thiết kế mạng an toàn"
+    href="/network-security/secure-design"
+  />
+</Cards>
+
+## Kiến thức tiên quyết
+
+Chương này tổng hợp kiến thức từ mọi tầng đã học nên bạn cần nắm vững các chương trước. Từ **Chương 1 (Nền tảng mạng máy tính)** bạn cần mô hình phân lớp OSI/TCP-IP để biết mỗi tấn công và biện pháp phòng thủ tác động ở tầng nào. Từ **Chương 4 (Network Layer)** bạn cần IP addressing và NAT vì nhiều tấn công lợi dụng địa chỉ IP, còn firewall lọc theo địa chỉ và route. Từ **Chương 5 (Transport Layer)** bạn cần port, socket và three-way handshake của TCP — nền tảng để hiểu SYN flood và việc lọc theo port. Cuối cùng, từ **Chương 6 (Application Layer)** bạn cần khái niệm TLS/HTTPS và DNS, vì bài **Mã hóa** sẽ mổ xẻ sâu hơn handshake mà bạn đã gặp ở đó.

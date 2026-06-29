@@ -1,0 +1,34 @@
+import { Cards } from "nextra/components";
+
+# Chương 2: Physical Layer
+
+Chương này đi xuống tầng thấp nhất của ngăn xếp mạng — **Physical Layer** (tầng vật lý — tầng L1 trong mô hình OSI, nơi từng bit được biến thành tín hiệu vật lý và truyền qua một môi trường). Sau khi Chương 1 cho bạn bộ khung 7 tầng, chương này trả lời câu hỏi cụ thể: một bit `0` hay `1` thực sự "bay" qua dây đồng, sợi quang hay sóng vô tuyến bằng cách nào, và những yếu tố vật lý nào quyết định một liên kết nhanh hay chậm, xa hay gần, rẻ hay đắt.
+
+## Mục tiêu học tập
+
+- Phân biệt được ba nhóm **transmission media** (copper, fiber optic, wireless) và đọc được bảng so sánh đặc tính của chúng.
+- Giải thích được vì sao bit phải được **encode** thành tín hiệu, và mô tả các sơ đồ NRZ, Manchester, 4B/5B.
+- Phân biệt **baseband** với **broadband**, **analog** với **digital signaling**, và **baud rate** với **bit rate**.
+- Định nghĩa và phân biệt **bandwidth**, **throughput**, **latency** (gồm các thành phần delay) và **attenuation**.
+- Tính được **transmission delay** và **propagation delay** cho một liên kết cụ thể bằng công thức.
+
+## Các bài học trong chương
+
+<Cards>
+  <Cards.Card
+    title="Môi trường truyền dẫn"
+    href="/physical-layer/transmission-media"
+  />
+  <Cards.Card
+    title="Mã hóa & tín hiệu"
+    href="/physical-layer/encoding-and-signaling"
+  />
+  <Cards.Card
+    title="Băng thông & hiệu năng"
+    href="/physical-layer/bandwidth-and-performance"
+  />
+</Cards>
+
+## Kiến thức tiên quyết
+
+Bạn cần nắm nội dung **Chương 1: Nền tảng mạng máy tính**, đặc biệt là bài **Mô hình OSI 7 tầng** (để biết Physical là L1 và nhận frame từ Data Link ở L2) và bài **Đóng gói & tháo gói dữ liệu** (để hiểu vì sao đơn vị dữ liệu ở tầng này là **bit**). Không cần kiến thức điện tử; mọi khái niệm vật lý đều được giải thích ngay khi xuất hiện.

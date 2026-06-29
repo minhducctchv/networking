@@ -1,0 +1,157 @@
+import { Callout } from "nextra/components";
+
+# Phân tích gói tin
+
+Mọi lý thuyết ở các chương trước — handshake TCP, truy vấn DNS, header IP — đều trở nên cụ thể khi bạn nhìn thấy chính các gói tin đó chạy trên dây. **Packet analysis** (phân tích gói tin — bắt lại lưu lượng mạng thật rồi đọc từng trường để hiểu hoặc gỡ lỗi) là kỹ năng nền tảng để chẩn đoán mạng. Bài học này giới thiệu hai công cụ kinh điển: **tcpdump** (công cụ bắt gói trên dòng lệnh) và **Wireshark** (công cụ bắt và phân tích gói có giao diện đồ họa, kèm bản dòng lệnh `tshark`). Với mỗi công cụ, bạn sẽ học cách viết bộ lọc và đọc output thật.
+
+## Capture filter và display filter khác nhau ra sao?
+
+Trước khi dùng công cụ, phải nắm hai loại bộ lọc vì chúng hoạt động ở hai thời điểm khác nhau. Một **capture filter** (bộ lọc khi bắt — quyết định gói nào được ghi lại, gói không khớp bị loại bỏ ngay và không bao giờ lưu) chạy *trong lúc* bắt; nó giúp giảm lượng dữ liệu và bỏ bớt nhiễu. Capture filter dùng cú pháp **BPF** (Berkeley Packet Filter — ngôn ngữ lọc cấp thấp theo trường của gói, ví dụ `tcp port 80`).
+
+Ngược lại, một **display filter** (bộ lọc khi hiển thị — quyết định gói nào được *hiện ra* từ tập đã bắt, các gói khác vẫn còn trong file) chạy *sau khi* đã bắt; nó không làm mất dữ liệu mà chỉ thu hẹp những gì bạn đang xem. Đây là điểm cần chính xác: **tcpdump và Wireshark đều dùng BPF cho capture filter**, nhưng **display filter là cú pháp riêng, phong phú hơn của Wireshark** (ví dụ `http.request.method == "GET"`). tcpdump không có ngôn ngữ display filter riêng — khi muốn "lọc lúc xem", tcpdump đọc lại file đã lưu và áp một biểu thức BPF khác.
+
+<Callout type="info">
+  Quy tắc nhớ: capture filter là tấm lưới ở cửa vào (BPF, dùng cho cả hai công
+  cụ) — gói bị loại sẽ mất luôn; display filter là kính lúp soi đống đã bắt
+  (cú pháp Wireshark) — không xóa gì cả. Bắt rộng, hiển thị hẹp là cách làm an
+  toàn khi chưa chắc cần gì.
+</Callout>
+
+## tcpdump
+
+**tcpdump** là công cụ bắt gói chạy thẳng trên terminal, có mặt sẵn trên hầu hết hệ thống Unix/Linux. Nó cần quyền `root` (hoặc `sudo`) vì phải đặt card mạng vào **promiscuous mode** (chế độ nhận mọi gói — card nhận cả những frame không gửi cho nó để công cụ thấy được toàn bộ lưu lượng trên đoạn mạng).
+
+### Capture filter cho tcpdump (BPF)
+
+Biểu thức BPF đặt ngay sau lệnh, thường để trong dấu nháy đơn. Hai ví dụ capture filter:
+
+- `tcp port 80` — chỉ bắt lưu lượng HTTP (TCP đến/đi port 80).
+- `host 192.168.1.10 and udp port 53` — chỉ bắt truy vấn DNS đến/đi từ một máy cụ thể.
+
+Có thể ghép điều kiện bằng các toán tử `and`, `or`, `not`. Lệnh dưới bắt 4 gói đầu của một kết nối HTTP và in ra (cờ `-n` không phân giải tên, `-i any` nghe trên mọi interface):
+
+```bash
+$ sudo tcpdump -i any -n 'tcp port 80'
+tcpdump: data link type LINUX_SLL2
+listening on any, link-type LINUX_SLL2 (Linux cooked v2), snapshot length 262144 bytes
+10:15:03.412019 IP 192.168.1.10.49210 > 93.184.216.34.80: Flags [S], seq 12345, win 64240, length 0
+10:15:03.456120 IP 93.184.216.34.80 > 192.168.1.10.49210: Flags [S.], seq 88990, ack 12346, win 65535, length 0
+10:15:03.457003 IP 192.168.1.10.49210 > 93.184.216.34.80: Flags [.], ack 88991, win 64240, length 0
+10:15:03.458891 IP 192.168.1.10.49210 > 93.184.216.34.80: Flags [P.], seq 1:78, ack 1, win 64240, length 77: HTTP: GET / HTTP/1.1
+```
+
+Ba dòng đầu chính là three-way handshake đã học ở Chương 5: `[S]` (SYN), `[S.]` (SYN-ACK), `[.]` (ACK). Dòng thứ tư mang cờ `[P.]` (PSH+ACK) và payload `GET / HTTP/1.1` — request HTTP thật sự bắt đầu. Mỗi dòng cho thấy `nguồn.port > đích.port`, đúng những trường đã mô tả trong lý thuyết.
+
+### "Display filter" của tcpdump: lọc lại từ file đã lưu
+
+Vì tcpdump không có display filter kiểu Wireshark, cách "lọc lúc xem" là **lưu phiên bắt vào file `.pcap`** rồi đọc lại với một biểu thức BPF hẹp hơn. Cờ `-w` ghi ra file, `-r` đọc từ file. Hai ví dụ lọc-khi-xem trên cùng một file đã bắt:
+
+```bash
+$ sudo tcpdump -i any -w web.pcap 'tcp port 80'
+^C
+1428 packets captured
+
+$ tcpdump -nr web.pcap 'tcp[tcpflags] & tcp-syn != 0'
+reading from file web.pcap, link-type LINUX_SLL2 (Linux cooked v2)
+10:15:03.412019 IP 192.168.1.10.49210 > 93.184.216.34.80: Flags [S], seq 12345, win 64240, length 0
+10:15:03.456120 IP 93.184.216.34.80 > 192.168.1.10.49210: Flags [S.], seq 88990, ack 12346, win 65535, length 0
+
+$ tcpdump -nr web.pcap 'host 93.184.216.34 and greater 1000'
+reading from file web.pcap, link-type LINUX_SLL2 (Linux cooked v2)
+10:15:03.502443 IP 93.184.216.34.80 > 192.168.1.10.49210: Flags [.], seq 1:1449, ack 78, win 65535, length 1448: HTTP: HTTP/1.1 200 OK
+```
+
+Biểu thức `tcp[tcpflags] & tcp-syn != 0` chỉ hiện các gói có bật cờ SYN (tức điểm mở kết nối), còn `host ... and greater 1000` chỉ hiện các gói lớn hơn 1000 byte (thường là gói dữ liệu, không phải gói điều khiển). File `web.pcap` vẫn nguyên 1428 gói — ta chỉ thay đổi cái được hiển thị, đúng tinh thần display filter.
+
+## Wireshark
+
+**Wireshark** là công cụ phân tích gói có giao diện đồ họa, mạnh ở khả năng "mổ xẻ" (dissect) hàng nghìn protocol và tô màu, lọc theo trường. Khi cần thao tác trên server không có màn hình, ta dùng **tshark** — bản dòng lệnh của Wireshark, cho output quan sát được giống GUI.
+
+### Capture filter cho Wireshark (BPF)
+
+Capture filter trong Wireshark dùng **đúng cú pháp BPF** như tcpdump (ô "capture filter" trước khi bấm Start, hoặc cờ `-f` của tshark). Hai ví dụ:
+
+- `tcp port 443` — chỉ bắt lưu lượng HTTPS.
+- `host 203.0.113.5` — chỉ bắt lưu lượng đến/đi từ một địa chỉ.
+
+### Display filter cho Wireshark (cú pháp riêng)
+
+Display filter mới là thế mạnh của Wireshark: cú pháp theo `protocol.field` với toán tử so sánh, gõ vào thanh filter phía trên hoặc truyền qua cờ `-Y` của tshark. Bốn ví dụ display filter (lưu ý các toán tử `==` và `&&` chỉ an toàn khi nằm trong code/backtick):
+
+- `http.request.method == "GET"` — chỉ hiện các HTTP request dùng method GET.
+- `ip.addr == 192.168.1.10` — chỉ hiện gói có địa chỉ nguồn hoặc đích là máy này.
+- `dns.flags.response == 1` — chỉ hiện các DNS response (bỏ qua query).
+- `tcp.flags.syn == 1 && tcp.flags.ack == 0` — chỉ hiện gói SYN "thuần" (gói mở đầu kết nối, chưa kèm ACK).
+
+So sánh với BPF cho rõ sự khác biệt: capture filter viết `tcp port 80`, còn display filter tương đương lại viết `tcp.port == 80`. Cú pháp khác hẳn nhau vì chúng là hai ngôn ngữ riêng biệt.
+
+Lệnh `tshark` dưới dùng đồng thời capture filter (`-f`, BPF) để chỉ bắt port 80, và display filter (`-Y`, cú pháp Wireshark) để chỉ hiện các HTTP request:
+
+```bash
+$ tshark -i eth0 -f 'tcp port 80' -Y 'http.request.method == "GET"'
+Capturing on 'eth0'
+    5   0.412019 192.168.1.10 -> 93.184.216.34 HTTP 142 GET / HTTP/1.1
+   12   1.984310 192.168.1.10 -> 93.184.216.34 HTTP 138 GET /style.css HTTP/1.1
+```
+
+Mỗi dòng output là một gói khớp *cả hai* bộ lọc: được bắt vì thuộc `tcp port 80`, và được hiển thị vì là một HTTP GET request. Cột cuối cho thấy method và đường dẫn — đúng cấu trúc HTTP request đã học ở Chương 6.
+
+Ta cũng có thể đọc lại file `.pcap` (kể cả file do tcpdump tạo) và áp display filter để xem một chiều của handshake:
+
+```bash
+$ tshark -r web.pcap -Y 'tcp.flags.syn == 1 && tcp.flags.ack == 1'
+    2   0.044101 93.184.216.34 -> 192.168.1.10 TCP 60 80 -> 49210 [SYN, ACK] Seq=0 Ack=1 Win=65535
+```
+
+Kết quả chỉ còn đúng gói SYN-ACK (bước 2 của handshake), minh họa display filter lọc theo tổ hợp cờ TCP mà capture filter BPF khó diễn đạt gọn gàng.
+
+## Ví dụ thực tế: quy trình bắt rồi phân tích
+
+Một quy trình điển hình khi gỡ lỗi một request web chậm gồm các bước sau:
+
+```text
+1. Bắt rộng, lọc hẹp ở tầng capture:   sudo tcpdump -i any -w web.pcap 'tcp port 80 or tcp port 443'
+2. Tái hiện sự cố (mở trang web), rồi dừng bắt bằng Ctrl-C.
+3. Mở web.pcap trong Wireshark.
+4. Lọc hiển thị handshake:              tcp.flags.syn == 1
+5. Lọc hiển thị các request:            http.request
+6. Đo thời gian giữa request và response để tìm chỗ chậm.
+```
+
+Cách "bắt rộng — lọc hẹp" này an toàn vì nếu lọc sai ở bước capture, gói bị bỏ sẽ mất vĩnh viễn; còn display filter thì gõ lại bao nhiêu lần cũng được mà dữ liệu gốc vẫn nguyên.
+
+## Tóm tắt nhanh
+
+- **Capture filter** (BPF) chạy lúc bắt, gói không khớp bị bỏ luôn; **display filter** chạy lúc xem, không xóa dữ liệu.
+- **tcpdump và Wireshark dùng chung BPF** cho capture filter; **display filter là cú pháp riêng của Wireshark** (`protocol.field`), tcpdump không có — nó lọc-khi-xem bằng cách đọc lại file `.pcap` với BPF.
+- BPF ví dụ: `tcp port 80`, `host 192.168.1.10 and udp port 53`. Display filter ví dụ: `http.request.method == "GET"`, `tcp.flags.syn == 1 && tcp.flags.ack == 0`.
+- Output bắt gói cho thấy trực tiếp `nguồn.port > đích.port` và cờ TCP (`[S]`, `[S.]`, `[.]`, `[P.]`).
+- Nguyên tắc an toàn: **bắt rộng, hiển thị hẹp**.
+
+## Bài tập
+
+### Câu hỏi lý thuyết
+
+1. Phân biệt capture filter và display filter theo hai tiêu chí: (a) thời điểm chúng hoạt động, và (b) điều gì xảy ra với gói không khớp. Vì sao nói tcpdump "không có display filter" lại đúng về mặt kỹ thuật?
+2. Cho biết với mỗi nhu cầu sau nên dùng loại bộ lọc nào và viết biểu thức tương ứng: (a) chỉ ghi lại lưu lượng HTTPS để file nhỏ; (b) từ một file đã bắt đủ loại lưu lượng, chỉ xem các DNS response.
+
+### Thực hành (dùng tcpdump và Wireshark/tshark)
+
+3. Trên máy của bạn, chạy `sudo tcpdump -i any -n 'tcp port 443'` rồi mở một trang HTTPS bất kỳ. Từ output, hãy chỉ ra ba dòng tạo thành three-way handshake và cho biết cờ nào xuất hiện ở mỗi dòng.
+4. Bắt một phiên duyệt web và lưu vào `web.pcap` (`tcpdump ... -w web.pcap`). Sau đó dùng `tshark -r web.pcap -Y 'http.request.method == "GET"'` (hoặc mở trong Wireshark và gõ cùng display filter) để liệt kê mọi GET request. Có bao nhiêu request, và đường dẫn đầu tiên được yêu cầu là gì?
+
+<details>
+  <summary>Đáp án & gợi ý</summary>
+
+1. (a) Capture filter hoạt động **trong lúc bắt**; display filter hoạt động **sau khi đã bắt**, lúc hiển thị. (b) Gói không khớp capture filter **bị loại bỏ và mất vĩnh viễn**; gói không khớp display filter **vẫn còn trong file**, chỉ tạm bị ẩn. tcpdump "không có display filter" là đúng vì nó chỉ hiểu cú pháp BPF; muốn lọc-khi-xem, nó phải đọc lại file `.pcap` và áp một biểu thức BPF mới, chứ không có ngôn ngữ `protocol.field` như Wireshark.
+2. (a) Dùng **capture filter** (để file nhỏ, gói khác không cần ghi): `tcp port 443`. (b) Dùng **display filter** (file đã có sẵn mọi thứ, chỉ cần xem một phần): `dns.flags.response == 1`.
+3. Ba dòng đầu của kết nối: dòng 1 cờ `[S]` (SYN, client → server); dòng 2 cờ `[S.]` (SYN-ACK, server → client); dòng 3 cờ `[.]` (ACK, client → server). Sau ba dòng này kết nối ở trạng thái `ESTABLISHED`.
+4. Số request bằng số dòng `tshark` in ra (mỗi dòng là một GET). Đường dẫn đầu tiên thường là `/` (trang gốc) — nó nằm ở cột cuối của dòng đầu tiên, ví dụ `GET / HTTP/1.1`. Lưu ý số lượng GET phụ thuộc trang bạn mở (mỗi ảnh, CSS, JS có thể là một GET riêng).
+
+</details>
+
+## Nguồn tham khảo
+
+- G. Combs et al., _Wireshark User's Guide_, chapters 4 ("Capturing Live Network Data") and 6.3–6.4 ("Filtering Packets While Viewing" — display filters). Available at the official Wireshark documentation site.
+- _tcpdump and libpcap_ project, `tcpdump(1)` and `pcap-filter(7)` man pages (BPF capture-filter syntax). Available at tcpdump.org.
+- S. McCanne & V. Jacobson, _The BSD Packet Filter: A New Architecture for User-level Packet Capture_, USENIX, 1993 (mô hình BPF mà cả hai công cụ dựa vào).

@@ -1,0 +1,33 @@
+import { Cards } from "nextra/components";
+
+# Chương 4: Network Layer
+
+Chương này leo lên một bậc nữa trong ngăn xếp mạng để tới **Network Layer** (tầng mạng — Layer 3 trong mô hình OSI, lo việc định địa chỉ logic và chọn đường cho dữ liệu đi xuyên nhiều mạng khác nhau). Sau khi Chương 3 cho thấy một frame đi từ card mạng này sang card mạng kia trong cùng một mạng cục bộ, chương này trả lời câu hỏi lớn hơn: làm sao một packet rời khỏi mạng nhà bạn, băng qua hàng chục router của các nhà mạng, và tới đúng một máy chủ ở nửa kia địa cầu. Khi học xong, bạn sẽ đọc được một địa chỉ IP, tự tay chia mạng con, hiểu vì sao IPv6 ra đời, phân biệt các kiểu routing, và giải thích được NAT đang âm thầm hoạt động sau mỗi router gia đình.
+
+## Mục tiêu học tập
+
+- Đọc và phân tích một địa chỉ **IPv4** 32-bit: phần network, phần host, **subnet mask** và cách viết **CIDR**.
+- Tự thực hiện phép **subnetting** từng bước để tìm network address, broadcast address và số host khả dụng của một mạng con.
+- Đọc, rút gọn và phân loại một địa chỉ **IPv6** 128-bit, đồng thời so sánh IPv6 với IPv4 về không gian địa chỉ, header và autoconfiguration.
+- Phân biệt **static routing** với **dynamic routing**, và biết khi nào dùng **RIP**, **OSPF** hay **BGP**.
+- Giải thích **NAT** ở ba dạng Static NAT, Dynamic NAT và **PAT**, kèm use case của từng dạng.
+
+## Các bài học trong chương
+
+<Cards>
+  <Cards.Card title="Địa chỉ IPv4" href="/network-layer/ipv4-addressing" />
+  <Cards.Card
+    title="Chia mạng con (Subnetting)"
+    href="/network-layer/subnetting"
+  />
+  <Cards.Card title="Địa chỉ IPv6" href="/network-layer/ipv6-addressing" />
+  <Cards.Card
+    title="Cơ bản về Routing"
+    href="/network-layer/routing-fundamentals"
+  />
+  <Cards.Card title="NAT" href="/network-layer/nat" />
+</Cards>
+
+## Kiến thức tiên quyết
+
+Bạn nên hoàn thành **Chương 1** (đặc biệt là mô hình OSI để biết Network là Layer 3, và quá trình encapsulation để hiểu vì sao đơn vị dữ liệu ở tầng này là **packet**), **Chương 2** và **Chương 3** (để thấy packet được bọc thành frame rồi truyền qua từng chặng vật lý ra sao). Network Layer đứng ngay trên Data Link: nó nhận trách nhiệm đưa packet đi **xuyên nhiều mạng**, trong khi Data Link chỉ lo một chặng. Bạn chỉ cần biết hệ nhị phân và phép tính lũy thừa cơ bản; mọi thao tác bit đều được làm mẫu từng bước trong các bài học.

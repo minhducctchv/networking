@@ -1,0 +1,45 @@
+# Tóm tắt Chương 9: Practical Tools & Troubleshooting
+
+Chương cuối đã biến kiến thức của cả khóa học thành kỹ năng quan sát: bắt và đọc gói tin thật, dùng bộ công cụ dòng lệnh để soi từng chặng của một kết nối, và ghép chúng lại thành một quy trình gỡ lỗi có hệ thống. Dưới đây là các khái niệm chính theo từng bài, sau đó là bài tập ôn tập kết hợp nhiều bài.
+
+## Các khái niệm chính
+
+### Phân tích gói tin
+
+- **Capture filter** (BPF) chạy lúc bắt, gói không khớp **mất vĩnh viễn**; **display filter** chạy lúc xem, **không xóa** dữ liệu.
+- **tcpdump và Wireshark dùng chung BPF** cho capture filter (`tcp port 80`); **display filter là cú pháp riêng của Wireshark** (`http.request.method == "GET"`), tcpdump không có và phải đọc lại file `.pcap` để lọc-khi-xem.
+- Nguyên tắc an toàn: **bắt rộng, hiển thị hẹp**; output bắt gói lộ trực tiếp cờ TCP (`[S]`, `[S.]`, `[.]`, `[P.]`).
+
+### Công cụ chẩn đoán
+
+- **ping** đo khả năng tới đích + RTT + packet loss; **traceroute** lộ từng hop bằng mẹo tăng dần TTL.
+- **nslookup** hỏi DNS nhanh, **dig** cho chi tiết (cờ `status`, TTL, section) để hiểu *vì sao*.
+- **netstat**/**ss** soi socket và cổng *trên máy cục bộ*; `-tuln` xem cổng `LISTEN`, `ss -tnp` truy ra tiến trình sở hữu.
+
+### Phương pháp troubleshooting
+
+- Gỡ lỗi là **thu hẹp có hệ thống**: kiểm tra **bottom-up** theo tầng và **divide-and-conquer**; phép thử cho kết quả "tốt" cũng giúp loại bỏ một nhánh nguyên nhân.
+- Mỗi loại lỗi có dấu vân tay riêng: DNS (ping IP được, ping tên hỏng), đường truyền (mất gói + traceroute định vị chặng), dịch vụ (`Connection refused`/RST so với `timed out`/im lặng).
+
+## Bài tập ôn tập
+
+1. **(Lý thuyết — kết hợp "Phân tích gói tin" + "Công cụ chẩn đoán")** Bạn muốn kiểm chứng three-way handshake tới một web server. Hãy nêu một cách dùng **ping** để chắc chắn server tới được trước, rồi viết một **capture filter** (BPF) cho tcpdump để chỉ bắt lưu lượng HTTPS tới server đó. Trong output tcpdump, ba cờ nào cho biết handshake đã hoàn tất?
+
+2. **(Tình huống — kết hợp "Phương pháp troubleshooting" + "Công cụ chẩn đoán")** Người dùng báo `shop.example.com` không mở được nhưng các trang khác vẫn vào bình thường. Hãy mô tả trình tự chẩn đoán **bottom-up**: bạn dùng **ping** tới cái gì trước, vì sao, và **dig**/`nslookup` giúp khẳng định nguyên nhân ra sao? Cờ DNS nào sẽ xác nhận lỗi nằm ở phân giải tên?
+
+3. **(Tình huống — kết hợp "Phương pháp troubleshooting" + "Phân tích gói tin")** Một dịch vụ ở `port 8080` trả về `Connection refused` cho client trong LAN. Hãy nêu một lệnh **ss** trên máy chủ để kiểm tra dịch vụ lắng nghe ở đâu, và giải thích bằng chứng từ **tcpdump** (gói SYN đến rồi nhận cờ gì) sẽ phân biệt "không ai nghe" với "firewall chặn im lặng" như thế nào.
+
+4. **(Lý thuyết — kết hợp "Phân tích gói tin" + "Phương pháp troubleshooting")** Vì sao nguyên tắc "bắt rộng, hiển thị hẹp" lại đặc biệt phù hợp với tinh thần troubleshooting "thu hẹp có hệ thống"? Liên hệ tới sự khác biệt giữa capture filter và display filter về chuyện "gói bị mất hay chỉ bị ẩn".
+
+<details>
+  <summary>Đáp án</summary>
+
+1. Trước hết chạy `ping -c 4 <server>` để xác nhận server tới được (RTT hợp lý, `0%` loss) — loại bỏ lỗi tầng dưới. Capture filter BPF cho HTTPS tới server: `tcp port 443 and host <ip-server>`. Trong output, ba cờ hoàn tất handshake là `[S]` (SYN, client → server), `[S.]` (SYN-ACK, server → client) và `[.]` (ACK, client → server); sau đó kết nối ở trạng thái `ESTABLISHED`.
+
+2. Bottom-up: ping thẳng **địa chỉ IP** của server trước (bỏ qua DNS) — nếu thành công thì L1–L3 ổn; rồi ping **tên miền** `shop.example.com` — nếu báo `Name or service not known` thì lỗi đã khoanh vào DNS. Dùng `dig shop.example.com` qua resolver mặc định và `dig @1.1.1.1 shop.example.com +short` để so sánh: nếu resolver công cộng trả IP còn resolver mặc định không, thì resolver mặc định hỏng. Cờ `status: SERVFAIL` (hoặc `NXDOMAIN` nếu tên thật sự không tồn tại) cùng `ANSWER: 0` xác nhận lỗi ở phân giải tên.
+
+3. Lệnh kiểm tra: `ss -tuln` (hoặc `ss -tlnp` để thấy tiến trình) — nếu thấy `127.0.0.1:8080` thì dịch vụ chỉ nghe loopback, client ngoài bị từ chối. Bằng chứng tcpdump (`sudo tcpdump -i any -n 'tcp port 8080'`): nếu thấy SYN `[S]` của client *rồi* thấy máy chủ đáp `[R.]` (RST) ⇒ gói tới nơi nhưng **không ai nghe** (`Connection refused`); nếu thấy SYN gửi đi mà **không có hồi đáp nào** ⇒ nhiều khả năng **firewall chặn im lặng** (`Connection timed out`).
+
+4. "Bắt rộng, hiển thị hẹp" khớp với "thu hẹp có hệ thống" vì cả hai đều giữ lại toàn bộ thông tin rồi lọc dần xuống phần liên quan, thay vì vứt bỏ sớm thứ về sau mới biết là cần. Capture filter quá hẹp làm **gói bị mất vĩnh viễn** — nếu giả thuyết ban đầu sai, bạn phải bắt lại; còn display filter chỉ **ẩn tạm** gói, nên bạn đổi giả thuyết và lọc lại bao nhiêu lần cũng được trên cùng tập dữ liệu. Đó là lý do nên lọc rộng ở tầng capture và để việc thu hẹp cho display filter.
+
+</details>

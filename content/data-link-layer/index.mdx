@@ -1,0 +1,38 @@
+import { Cards } from "nextra/components";
+
+# Chương 3: Data Link Layer
+
+Chương này đi sâu vào **Data Link Layer** (tầng liên kết dữ liệu — Layer 2 trong mô hình OSI, lo việc truyền dữ liệu qua một chặng vật lý giữa hai thiết bị kề nhau). Sau khi Chương 2 cho thấy bit được biến thành tín hiệu và truyền trên medium như thế nào, chương này trả lời câu hỏi tiếp theo: làm sao gom dòng bit đó thành các đơn vị có nghĩa, gắn địa chỉ cho chúng, phát hiện khi chúng bị hỏng, và chuyển chúng đúng nơi trong một mạng cục bộ. Khi học xong, bạn sẽ hiểu trọn vẹn một frame Ethernet đi từ card mạng này tới card mạng kia ra sao.
+
+## Mục tiêu học tập
+
+- Giải thích **framing** và cách phân định ranh giới frame bằng byte stuffing và bit stuffing.
+- Đọc và phân tích một **MAC address** 48-bit: phần OUI, phần thiết bị, và phân biệt unicast/multicast/broadcast.
+- Tính được **FCS** bằng **CRC** qua phép chia nhị phân (XOR) từng bước, và mô tả cách máy nhận kiểm lỗi.
+- Liệt kê đầy đủ các trường trong frame **Ethernet** theo chuẩn **IEEE 802.3** cùng kích thước và mục đích của từng trường.
+- Mô tả cách **switch** học MAC address, ra quyết định forward/flood/filter, và cách **VLAN** chia tách broadcast domain.
+
+## Các bài học trong chương
+
+<Cards>
+  <Cards.Card
+    title="Framing & MAC address"
+    href="/data-link-layer/framing-and-mac-addressing"
+  />
+  <Cards.Card
+    title="Phát hiện lỗi với CRC"
+    href="/data-link-layer/error-detection-crc"
+  />
+  <Cards.Card
+    title="Ethernet & cấu trúc frame"
+    href="/data-link-layer/ethernet-and-frames"
+  />
+  <Cards.Card
+    title="Switching & VLAN"
+    href="/data-link-layer/switching-and-vlans"
+  />
+</Cards>
+
+## Kiến thức tiên quyết
+
+Bạn nên hoàn thành **Chương 1** (đặc biệt là mô hình OSI, vị trí của Layer 2, và quá trình encapsulation/đơn vị dữ liệu đổi tên thành **frame** ở tầng Data Link) và **Chương 2** (cách bit được mã hóa và truyền thành tín hiệu trên medium vật lý). Chương 3 đứng ngay trên những nền tảng đó: nó nhận dòng bit thô từ Physical Layer và biến chúng thành các frame có địa chỉ, có kiểm lỗi.

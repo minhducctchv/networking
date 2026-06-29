@@ -1,0 +1,153 @@
+import { Callout } from "nextra/components";
+
+# Địa chỉ IPv4
+
+Mỗi thiết bị muốn gửi và nhận packet trên một mạng IP đều cần một địa chỉ logic để được nhận diện. Địa chỉ đó là **IPv4 address** (Internet Protocol version 4 — phiên bản giao thức Internet dùng địa chỉ 32-bit, được định nghĩa trong RFC 791). Bài học này mổ xẻ cấu trúc 32-bit của một địa chỉ IPv4, cách viết nó dưới dạng dotted decimal, vai trò của **subnet mask** và cách viết **CIDR**, rồi chỉ rõ ranh giới giữa phần network và phần host — nền tảng để bạn chia mạng con ở bài kế tiếp.
+
+## Một địa chỉ IPv4 là 32 bit
+
+Về bản chất, một địa chỉ IPv4 chỉ là một con số **32-bit**. Để con người dễ đọc, người ta chia 32 bit đó thành 4 nhóm 8 bit (gọi là **octet** — một nhóm 8 bit, tức một byte), đổi mỗi octet sang số thập phân `0`–`255`, rồi nối lại bằng dấu chấm. Cách viết này gọi là **dotted decimal notation** (ký pháp thập phân có dấu chấm).
+
+Ví dụ địa chỉ `192.168.10.5` tương ứng với chuỗi nhị phân sau:
+
+```text
+Thập phân:  192      .  168      .  10       .  5
+Nhị phân:   11000000 .  10101000 .  00001010 .  00000101
+Bit index:  31....24    23....16    15.....8    7.....0
+```
+
+Vì mỗi octet có 8 bit nên giá trị tối đa của một octet là `11111111` = `255`, và tối thiểu là `00000000` = `0`. Đó là lý do bạn không bao giờ thấy octet nào lớn hơn `255` trong một địa chỉ IPv4 hợp lệ.
+
+<Callout type="info">
+  Tổng không gian địa chỉ IPv4 là `2^32` ≈ 4.3 tỉ địa chỉ. Nghe có vẻ nhiều,
+  nhưng số thiết bị kết nối Internet đã vượt xa con số này — đây chính là động
+  lực khai sinh ra IPv6 (xem bài **Địa chỉ IPv6**).
+</Callout>
+
+## Phần network và phần host
+
+Một địa chỉ IPv4 không đứng một mình; nó luôn được hiểu như hai phần ghép lại: **network portion** (phần mạng — các bit đầu xác định địa chỉ đó thuộc mạng nào) và **host portion** (phần host — các bit cuối xác định thiết bị cụ thể bên trong mạng đó).
+
+Cách chia này giống số điện thoại: mã vùng cho biết bạn ở tỉnh nào (network), phần còn lại cho biết bạn là thuê bao nào trong tỉnh đó (host). Mọi thiết bị trong cùng một mạng chia sẻ chung phần network và chỉ khác nhau ở phần host.
+
+Ranh giới giữa hai phần này không cố định — nó được quyết định bởi **subnet mask**.
+
+## Subnet mask
+
+**Subnet mask** (mặt nạ mạng con — một dãy 32 bit trong đó các bit `1` đánh dấu phần network và các bit `0` đánh dấu phần host) cho biết bao nhiêu bit đầu của địa chỉ thuộc về network. Subnet mask cũng được viết dưới dạng dotted decimal, ví dụ `255.255.255.0`.
+
+Quy tắc bất di bất dịch: các bit `1` trong mask luôn đứng liền nhau ở đầu, theo sau là các bit `0`. Bảng dưới đây cho thấy quan hệ giữa mask và số bit network:
+
+```text
+Mask dotted decimal   Mask nhị phân                          Số bit network
+255.0.0.0             11111111.00000000.00000000.00000000    8
+255.255.0.0           11111111.11111111.00000000.00000000    16
+255.255.255.0         11111111.11111111.11111111.00000000    24
+255.255.255.192       11111111.11111111.11111111.11000000    26
+255.255.255.255       11111111.11111111.11111111.11111111    32
+```
+
+Để tìm địa chỉ network của một host, ta lấy địa chỉ IP **AND** (phép và bit, chỉ ra `1` khi cả hai bit đều là `1`) với subnet mask:
+
+```text
+IP:        192.168.10.5    = 11000000.10101000.00001010.00000101
+Mask:      255.255.255.0   = 11111111.11111111.11111111.00000000
+AND        ---------------------------------------------------------
+Network:   192.168.10.0    = 11000000.10101000.00001010.00000000
+```
+
+Phép AND này "xóa" toàn bộ phần host về `0`, để lại đúng địa chỉ network. Mọi thiết bị có cùng kết quả AND thì nằm chung một mạng.
+
+## CIDR — cách viết gọn subnet mask
+
+Viết mask kiểu `255.255.255.0` khá dài dòng, nên ngày nay người ta dùng **CIDR** (Classless Inter-Domain Routing — cách viết địa chỉ kèm `/n`, trong đó `n` là số bit phần network, định nghĩa trong RFC 4632). Thay vì `255.255.255.0`, ta chỉ cần viết `/24` vì mask đó có đúng 24 bit `1`.
+
+Như vậy `192.168.10.0/24` đọc là: "mạng `192.168.10.0` với 24 bit network". Cách viết `/n` này gọi là **prefix length** (độ dài tiền tố).
+
+<Callout type="info">
+  Trước CIDR, IPv4 dùng hệ thống **classful** chia cứng thành class A (`/8`),
+  class B (`/16`), class C (`/24`). Cách chia cứng đó lãng phí địa chỉ, nên CIDR
+  ra đời để cho phép chọn prefix length **tùy ý** từ `/0` đến `/32`.
+</Callout>
+
+## Ví dụ thực tế: bóc tách `192.168.10.0/24`
+
+Hãy lấy mạng `192.168.10.0/24` và xem chính xác bit nào là network, bit nào là host:
+
+```text
+Địa chỉ:   192.168.10.0
+Nhị phân:  11000000.10101000.00001010 | 00000000
+                                       ^ ranh giới /24
+           |________ network (24 bit) ________| host (8 bit)
+
+Prefix length = 24  ->  network = 24 bit đầu = 192.168.10
+Host bits     = 32 - 24 = 8 bit cuối = octet thứ tư
+```
+
+Với 8 bit host, mạng này chứa `2^8 = 256` địa chỉ, từ `192.168.10.0` đến `192.168.10.255`. Nhưng không phải địa chỉ nào cũng gán được cho thiết bị:
+
+```text
+192.168.10.0     -> network address  (toàn bit host = 0) — KHÔNG gán cho host
+192.168.10.1     -> host khả dụng đầu tiên
+...
+192.168.10.254   -> host khả dụng cuối cùng
+192.168.10.255   -> broadcast address (toàn bit host = 1) — KHÔNG gán cho host
+```
+
+Vì hai địa chỉ đặc biệt (network và broadcast) bị dành riêng, số host gán được là `2^8 - 2 = 254`. Công thức tổng quát cho số host khả dụng là `2^(số bit host) - 2`.
+
+<Callout type="info">
+  **Private address** (địa chỉ riêng, định nghĩa trong RFC 1918) là các dải
+  không định tuyến được trên Internet công cộng: `10.0.0.0/8`,
+  `172.16.0.0/12` và `192.168.0.0/16`. Đây là lý do `192.168.x.x` xuất hiện ở
+  hầu hết router gia đình; chúng ra Internet được nhờ **NAT** (xem bài cuối
+  chương).
+</Callout>
+
+## Tóm tắt nhanh
+
+- Một địa chỉ IPv4 là số **32-bit**, viết dạng **dotted decimal** gồm 4 octet `0`–`255`.
+- Địa chỉ chia thành **network portion** (bit đầu) và **host portion** (bit cuối); ranh giới do **subnet mask** quyết định.
+- Lấy `IP AND mask` để ra **network address**; bit `1` của mask là network, bit `0` là host.
+- **CIDR** `/n` là cách viết gọn cho mask có `n` bit `1`; ví dụ `/24` ⇔ `255.255.255.0`.
+- Số host khả dụng = `2^(số bit host) - 2` (trừ network address và broadcast address).
+
+## Bài tập
+
+### Câu hỏi lý thuyết
+
+1. Giải thích vì sao mỗi octet trong địa chỉ IPv4 luôn nằm trong khoảng `0`–`255` chứ không thể là `300`. Liên hệ tới việc một octet có bao nhiêu bit.
+2. Một địa chỉ và subnet mask cho biết điều gì khi đứng cùng nhau mà chỉ riêng địa chỉ thì không thể nói lên? Vì sao phép `AND` lại cho ra network address?
+
+### Bài tập tính toán
+
+3. Cho host `10.20.30.40` với mask `255.255.0.0` (tức `/16`). Hãy: (a) viết địa chỉ ra nhị phân; (b) xác định phần network và phần host; (c) tính network address bằng phép `AND`; (d) tính số host khả dụng của mạng này.
+
+<details>
+  <summary>Đáp án & gợi ý</summary>
+
+1. Mỗi octet có đúng **8 bit**, nên giá trị lớn nhất là `11111111` = `255` và nhỏ nhất là `00000000` = `0`. Giá trị `300` cần tới 9 bit nên không biểu diễn được trong một octet — vì vậy không có octet nào vượt quá `255`.
+
+2. Chỉ riêng địa chỉ thì không biết bao nhiêu bit là network. **Subnet mask** mới cho biết ranh giới network/host, từ đó xác định địa chỉ đó thuộc mạng nào và mạng đó có bao nhiêu host. Phép `AND` giữ nguyên các bit ở vị trí mask `= 1` (phần network) và ép các bit ở vị trí mask `= 0` (phần host) về `0`, nên kết quả chính là network address.
+
+3. (a) `10.20.30.40` = `00001010.00010100.00011110.00101000`.
+   (b) `/16` ⇒ 16 bit đầu là network (`10.20`), 16 bit cuối là host (`30.40`).
+   (c) Phép AND:
+
+   ```text
+   IP:      10.20.30.40   = 00001010.00010100.00011110.00101000
+   Mask:    255.255.0.0   = 11111111.11111111.00000000.00000000
+   AND      -----------------------------------------------------
+   Network: 10.20.0.0     = 00001010.00010100.00000000.00000000
+   ```
+
+   (d) Số bit host = `32 - 16 = 16`, nên số host khả dụng = `2^16 - 2 = 65534`.
+
+</details>
+
+## Nguồn tham khảo
+
+- J. Postel (ed.), _Internet Protocol_, RFC 791, mục 2.3 (Addressing) — định nghĩa địa chỉ IPv4 32-bit.
+- V. Fuller & T. Li, _Classless Inter-domain Routing (CIDR): The Internet Address Assignment and Aggregation Plan_, RFC 4632, mục 3.1 (prefix notation).
+- Y. Rekhter và cộng sự, _Address Allocation for Private Internets_, RFC 1918, mục 3 (các dải private).
+- J. F. Kurose & K. W. Ross, _Computer Networking: A Top-Down Approach_, 8th ed., mục 4.3.1 (IPv4 Addressing).

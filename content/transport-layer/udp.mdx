@@ -1,0 +1,98 @@
+import { Callout } from "nextra/components";
+
+# UDP
+
+**UDP** (User Datagram Protocol — protocol vận chuyển không kết nối, gửi từng datagram độc lập mà không đảm bảo độ tin cậy) là người anh em tối giản của TCP. Nơi TCP thêm handshake, đánh số, xác nhận và điều khiển luồng, UDP gần như không thêm gì: nó chỉ bọc dữ liệu trong một header 8 byte rồi đẩy đi. Đổi lại sự thiếu vắng các đảm bảo đó là độ trễ thấp và overhead nhỏ. Bài học này giải thích bản chất connectionless của UDP, các đặc điểm khác TCP, và những use case mà UDP là lựa chọn đúng.
+
+## Bản chất connectionless
+
+UDP là **connectionless** (không kết nối — không có bước bắt tay nào trước khi gửi; mỗi datagram tự đứng một mình). Máy gửi không cần thiết lập trạng thái với máy nhận: nó tạo một **datagram** (gói dữ liệu độc lập, mang đủ thông tin địa chỉ để tự đi tới đích) và gửi ngay. Không có khái niệm "kết nối đang mở" như TCP.
+
+Hệ quả trực tiếp là UDP không duy trì trạng thái về thứ tự hay tình trạng nhận của các datagram. Mỗi datagram được xử lý tách biệt; nếu một cái lạc đường hay tới muộn, UDP không hề biết và cũng không làm gì. Mọi đảm bảo (nếu ứng dụng cần) phải do chính ứng dụng tự lo ở tầng trên.
+
+## UDP header chỉ 8 byte
+
+Toàn bộ "bộ máy" của UDP nằm trong một header cố định 8 byte gồm bốn trường, mỗi trường 2 byte:
+
+```text
+0                   1                   2                   3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|          Source Port          |       Destination Port        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|            Length             |           Checksum            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                         Data (payload)                        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+```
+
+Bốn trường mang ý nghĩa: **Source Port** và **Destination Port** để demultiplex tới đúng socket; **Length** là tổng độ dài header cộng payload; **Checksum** là một kiểm tra lỗi tùy chọn trên header và dữ liệu. So với header tối thiểu 20 byte của TCP, header 8 byte của UDP là một khác biệt lớn về overhead khi gửi nhiều gói nhỏ.
+
+## Ba đặc điểm phân biệt UDP với TCP
+
+UDP khác TCP ở nhiều điểm; dưới đây là ba khác biệt cốt lõi nhất.
+
+- **Không đảm bảo gửi đến (no guaranteed delivery).** UDP không dùng ACK và không gửi lại datagram bị mất. Một datagram rơi trên đường là mất luôn; UDP không phát hiện và không khắc phục.
+- **Không đảm bảo thứ tự (no ordering).** Các datagram có thể tới đích theo thứ tự khác lúc gửi (do đi các đường khác nhau). UDP không đánh số để sắp xếp lại, nên máy nhận thấy chúng đúng theo thứ tự tới nơi.
+- **Overhead thấp và không kiểm soát tốc độ.** Header chỉ **8 byte** (so với 20 byte của TCP) và không có handshake, flow control hay congestion control. UDP gửi đúng tốc độ ứng dụng yêu cầu, không tự ghìm lại khi mạng tắc.
+
+<Callout type="info">
+  "Tối giản" không có nghĩa là "kém". Việc UDP **không** tự gửi lại hay **không**
+  tự giảm tốc lại chính là tính năng mà một số ứng dụng cần: chúng muốn tự quyết
+  định xử lý mất gói thế nào, thay vì để protocol vận chuyển quyết định thay.
+</Callout>
+
+## Hai use case nên dùng UDP
+
+UDP là lựa chọn đúng khi **độ trễ thấp quan trọng hơn độ tin cậy tuyệt đối**, hoặc khi trao đổi quá ngắn để bõ công bắt tay.
+
+- **DNS** (Domain Name System — dịch vụ phân giải tên miền thành địa chỉ IP). Một truy vấn DNS thường chỉ là một câu hỏi nhỏ và một câu trả lời nhỏ. Mở một kết nối TCP (ba bước handshake) cho trao đổi tí xíu này là lãng phí; UDP cho phép hỏi–đáp trong đúng hai gói. Nếu mất gói, client chỉ việc hỏi lại — rẻ hơn nhiều so với duy trì kết nối.
+- **Real-time media: VoIP và video call.** Trong gọi thoại/gọi video, dữ liệu cũ vô dụng: nếu một gói âm thanh tới trễ, phát lại nó cũng chẳng còn nghĩa lý. Người dùng thà nghe một tiếng "sựt" thoáng qua (một gói mất) còn hơn bị **lag** vì TCP dừng lại để gửi lại gói cũ. UDP để mất gói trôi qua và tiếp tục với dữ liệu mới, giữ cuộc gọi mượt.
+
+Các use case khác cùng tinh thần này gồm **online gaming** (cập nhật vị trí mới quan trọng hơn vị trí cũ), **DHCP**, và **streaming** trực tiếp. Điểm chung: ứng dụng chịu được mất mát một phần, nhưng không chịu được độ trễ do cơ chế tin cậy gây ra.
+
+## Ví dụ thực tế: một truy vấn DNS qua UDP
+
+Quan sát header của một datagram DNS đi từ client tới DNS server ở port `53`. Các giá trị (viết kèm dạng hex) cho thấy đúng bốn trường 2 byte:
+
+```text
+Source Port : 0xC3A5  (50085)   - ephemeral port phía client
+Dest Port   : 0x0035  (53)      - cổng chuẩn của DNS
+Length      : 0x002C  (44 byte) - 8 byte header + 36 byte payload
+Checksum    : 0x1A2B            - kiểm tra lỗi header + data
+Data        : truy vấn "example.com", record type A (36 byte)
+```
+
+Cả truy vấn này gói gọn trong **một** datagram 44 byte, gửi đi mà không cần bất kỳ segment thiết lập nào trước đó. Nếu datagram trả lời từ server bị mất, ứng dụng DNS phía client đơn giản phát lại truy vấn sau một khoảng timeout — việc khắc phục mất mát được đẩy lên ứng dụng, đúng triết lý tối giản của UDP.
+
+## Tóm tắt nhanh
+
+- UDP là protocol **connectionless**: gửi từng **datagram** độc lập, không handshake, không trạng thái kết nối.
+- Header chỉ **8 byte** với bốn trường: Source Port, Destination Port, Length, Checksum.
+- Ba khác biệt với TCP: **không đảm bảo gửi đến**, **không đảm bảo thứ tự**, **overhead thấp + không điều khiển tốc độ**.
+- Nên dùng UDP khi độ trễ quan trọng hơn độ tin cậy: **DNS**, **VoIP/video call**, ngoài ra còn gaming, DHCP, streaming.
+
+## Bài tập
+
+### Câu hỏi lý thuyết
+
+1. Nêu ít nhất ba đặc điểm phân biệt UDP với TCP. Với mỗi đặc điểm, giải thích ngắn gọn hệ quả của nó đối với ứng dụng.
+2. Vì sao DNS thường dùng UDP thay vì TCP cho các truy vấn thông thường? Trả lời dựa trên kích thước trao đổi và chi phí thiết lập kết nối.
+
+### Bài tập phân tích
+
+3. Một ứng dụng gọi video chọn UDP và chấp nhận mất một số gói. Giải thích vì sao việc TCP tự động gửi lại gói mất lại **có hại** cho trải nghiệm gọi video, trong khi nó lại có lợi cho việc tải một file.
+
+<details>
+  <summary>Đáp án & gợi ý</summary>
+
+1. Ba đặc điểm: (a) **Không đảm bảo gửi đến** — gói mất là mất luôn, ứng dụng phải tự xử lý nếu cần. (b) **Không đảm bảo thứ tự** — máy nhận có thể nhận gói sai thứ tự, phải tự sắp lại nếu cần. (c) **Overhead thấp (header 8 byte) và không điều khiển tốc độ** — phù hợp gói nhỏ và ứng dụng cần gửi đều, nhưng không tự tránh tắc nghẽn.
+2. Một truy vấn DNS thường rất nhỏ (một câu hỏi, một câu trả lời). Dùng TCP phải tốn ba segment handshake trước khi gửi được câu hỏi, làm tăng độ trễ và tài nguyên một cách không cần thiết. UDP gửi câu hỏi ngay trong một datagram; nếu mất thì hỏi lại — rẻ hơn duy trì kết nối.
+3. Trong gọi video, dữ liệu phải tới **kịp lúc**; một khung hình/đoạn âm thanh cũ tới muộn thì vô dụng. Nếu TCP dừng dòng dữ liệu để gửi lại gói cũ, mọi dữ liệu mới phía sau bị kẹt chờ (head-of-line blocking), gây giật/lag. Với tải file thì ngược lại: thiếu một byte là file hỏng, nên việc TCP gửi lại để đủ dữ liệu là điều bắt buộc và có lợi.
+
+</details>
+
+## Nguồn tham khảo
+
+- J. Postel, _User Datagram Protocol_, RFC 768 (định nghĩa header 8 byte: Source Port, Destination Port, Length, Checksum).
+- J. F. Kurose & K. W. Ross, _Computer Networking: A Top-Down Approach_, 8th ed., mục 3.3 ("Connectionless Transport: UDP").

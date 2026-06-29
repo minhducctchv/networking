@@ -1,0 +1,60 @@
+# Tóm tắt Chương 7: Network Security
+
+Chương này đã chuyển từ góc nhìn "mạng hoạt động thế nào" sang "mạng bị tấn công và được bảo vệ ra sao". Ta đi từ các mối đe dọa, tới công cụ mã hóa bảo vệ dữ liệu, các lớp phòng thủ vành đai, và cuối cùng là nguyên tắc thiết kế gắn kết tất cả lại. Dưới đây là các khái niệm chính theo từng bài, sau đó là bài tập ôn tập kết hợp nhiều bài.
+
+## Các khái niệm chính
+
+### Mối đe dọa mạng
+
+- Mọi tấn công nhắm vào **CIA triad** (confidentiality, integrity, availability).
+- **DDoS** dùng **botnet** làm cạn tài nguyên (ví dụ **SYN flood**) để phá availability; mitigation gồm rate limiting, SYN cookies, scrubbing/CDN.
+- **MITM** lén đứng giữa (ví dụ **ARP spoofing**) để đọc/sửa dữ liệu; chống đỡ bằng **encryption + authentication**.
+- **Spoofing** làm giả trường định danh (IP/MAC/DNS/email); mitigation chung là **xác thực nguồn gốc** (BCP 38, DNSSEC, SPF/DKIM/DMARC).
+
+### Mã hóa
+
+- **Symmetric encryption** dùng cùng một khóa, nhanh, nhưng vướng **key distribution** (ví dụ AES).
+- **Asymmetric encryption** dùng cặp public/private key, giải được key distribution và cho phép **digital signature** (ví dụ RSA/ECC), nhưng chậm.
+- **TLS handshake** kết hợp cả hai: bất đối xứng để xác thực qua **certificate** (do **CA** ký) và thỏa thuận **session key**, đối xứng cho dữ liệu; TLS 1.3 thêm **forward secrecy**.
+
+### Phòng thủ vành đai
+
+- **Firewall**: **stateless** xét từng gói độc lập (ACL); **stateful** theo dõi connection table và tự cho lưu lượng trả về của kết nối hợp lệ.
+- **VPN** kết hợp **tunneling + encryption** tạo đường an toàn qua Internet; use case **remote-access** và **site-to-site**.
+- **NAC/802.1X** kiểm soát thiết bị ngay tại cổng với ba vai trò supplicant – authenticator – authentication server (RADIUS).
+
+### Thiết kế mạng an toàn
+
+- **Defense in depth**: nhiều lớp độc lập, không một điểm thất bại đơn lẻ làm sập hệ thống.
+- **Least privilege**: chỉ cấp quyền tối thiểu (RBAC, security group) để thu hẹp attack surface.
+- **Network segmentation**: chia vùng (VLAN/subnet, DMZ) chặn di chuyển ngang; **zero trust** đẩy xa hơn với "never trust, always verify" và micro-segmentation.
+
+## Bài tập ôn tập
+
+1. **(Lý thuyết — kết hợp "Mối đe dọa mạng" + "Mã hóa")** Giải thích vì sao một kênh được bảo vệ bằng **TLS** (với certificate hợp lệ) lại vô hiệu hóa cả việc nghe lén lẫn việc sửa dữ liệu trong tấn công **MITM**. Trong câu trả lời, chỉ rõ phần **asymmetric** lo việc gì và phần **symmetric** lo việc gì.
+
+2. **(Tình huống — kết hợp "Mối đe dọa mạng" + "Phòng thủ vành đai")** Một web server đang hứng **SYN flood** và đồng thời có người cố SSH dò mật khẩu từ nhiều IP lạ. Hãy đề xuất biện pháp cho từng vấn đề: dùng cơ chế nào ở tầng TCP để giảm SYN flood, và viết ý tưởng rule **stateful firewall** để chỉ cho phép SSH từ dải quản trị `203.0.113.0/24`.
+
+3. **(Tình huống thực tế — kết hợp "Thiết kế mạng an toàn" + "Phòng thủ vành đai" + "Mối đe dọa mạng")** Thiết kế lại một mạng phẳng gồm web server, database và máy nhân viên theo **segmentation** và **least privilege**. Giải thích nếu web server bị chiếm (qua một lỗ hổng) thì **DMZ** và firewall giữa các zone giúp giới hạn thiệt hại ra sao, và đây là biểu hiện của nguyên tắc thiết kế nào.
+
+4. **(Phân tích — kết hợp "Mã hóa" + "Thiết kế mạng an toàn")** Một hệ thống lưu dữ liệu nhạy cảm dưới dạng plaintext trong database nhưng tự tin vì "đã có firewall ở biên". Dựa trên **defense in depth** và vai trò của **encryption**, hãy chỉ ra lỗ hổng trong lập luận này và đề xuất cải thiện.
+
+<details>
+  <summary>Đáp án</summary>
+
+1. TLS dùng phần **asymmetric** để **xác thực server qua certificate** (kẻ MITM không có private key tương ứng với domain nên không mạo danh được) và để **thỏa thuận an toàn một session key**. Sau đó phần **symmetric** mã hóa toàn bộ dữ liệu bằng session key đó, nên kẻ ở giữa không đọc được (mất confidentiality bị chặn) và mọi sửa đổi đều bị phát hiện nhờ kiểm tra toàn vẹn (mất integrity bị chặn). Vì không qua được bước xác thực, kẻ tấn công thậm chí không chen vào được kênh.
+
+2. **SYN flood**: bật **SYN cookies** để server không cấp phát trạng thái cho tới khi handshake hoàn tất, kèm rate limiting. **SSH brute-force**: dùng **stateful firewall** với default-deny và chỉ mở SSH cho dải quản trị, ví dụ:
+
+   ```bash
+   iptables -P INPUT DROP
+   iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+   iptables -A INPUT -p tcp -s 203.0.113.0/24 --dport 22 -j ACCEPT
+   iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+   ```
+
+3. Đặt **web server trong DMZ**, **database ở zone riêng hạn chế cao** (chỉ nhận kết nối từ web server đúng port DB), **máy nhân viên ở VLAN/subnet riêng**. Firewall giữa các zone chỉ mở đúng vài port cần thiết. Nếu web server bị chiếm, kẻ tấn công vẫn bị chặn không nhảy thẳng vào database hay mạng nhân viên — chính là **network segmentation** kết hợp **least privilege** (áp cho luồng mạng), và là một lớp của **defense in depth**.
+
+4. Lỗ hổng: lập luận này đặt cược toàn bộ vào **một lớp** (firewall biên), trái với **defense in depth**. Nếu firewall bị cấu hình sai, hoặc kẻ tấn công vào được qua lỗ hổng ứng dụng (SQL injection) hay tài khoản bị lộ, thì dữ liệu plaintext bị đọc trực tiếp. Cải thiện: **mã hóa dữ liệu khi lưu trữ (at rest) và khi truyền (in transit)**, áp **least privilege** cho tài khoản DB, và thêm các lớp khác (segmentation, giám sát) để dù một lớp thủng thì dữ liệu vẫn được bảo vệ.
+
+</details>

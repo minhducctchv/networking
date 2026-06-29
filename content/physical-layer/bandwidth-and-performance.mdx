@@ -1,0 +1,101 @@
+import { Callout } from "nextra/components";
+
+# Băng thông & hiệu năng
+
+Sau khi đã biết bit đi qua môi trường nào và được mã hóa thành tín hiệu ra sao, câu hỏi tiếp theo là: liên kết này **nhanh** đến mức nào? "Nhanh" thực ra gồm nhiều khái niệm khác nhau mà người mới hay gộp làm một — bandwidth, throughput và latency. Bài học này tách bạch chúng, phân tích các thành phần của độ trễ, giải thích hiện tượng attenuation, và đưa ra công thức để bạn tự tính được thời gian truyền của một liên kết cụ thể.
+
+## Bandwidth và throughput
+
+**Bandwidth** (băng thông — dung lượng tối đa lý thuyết của một liên kết, đo bằng bit mỗi giây, bps) là con số bạn thấy trên hợp đồng Internet hay thông số card mạng, ví dụ 1 Gbps. Nó là "bề rộng của ống nước": tối đa bao nhiêu bit có thể đẩy qua trong một giây.
+
+**Throughput** (thông lượng — tốc độ truyền dữ liệu thực tế đạt được trên liên kết tại một thời điểm) là lượng nước thực sự chảy qua. Throughput gần như luôn nhỏ hơn bandwidth vì còn bị ảnh hưởng bởi nghẽn mạng, lỗi, overhead của protocol, và đặc biệt là **bottleneck link** (liên kết thắt cổ chai — chặng có bandwidth thấp nhất trên đường đi, quyết định throughput tối đa của cả tuyến).
+
+<Callout type="info">
+  Bandwidth là **khả năng**, throughput là **kết quả thực tế**. Một đường 1 Gbps
+  (bandwidth) vẫn có thể chỉ đạt 300 Mbps (throughput) nếu một chặng giữa đường
+  bị nghẽn hoặc chỉ chạy ở 300 Mbps.
+</Callout>
+
+## Latency và bốn thành phần delay
+
+**Latency** (độ trễ — tổng thời gian để một bit hoặc một gói đi từ nguồn tới đích) không giống bandwidth: bạn có thể có đường rất rộng mà vẫn trễ cao. Tổng latency của một gói qua một chặng là tổng của bốn thành phần delay.
+
+**Transmission delay** (trễ truyền — thời gian để đẩy toàn bộ bit của gói lên dây) phụ thuộc kích thước gói và bandwidth: `transmission delay = kích thước gói / bandwidth`. **Propagation delay** (trễ lan truyền — thời gian để một bit đi hết chiều dài vật lý của liên kết) phụ thuộc khoảng cách và tốc độ lan truyền: `propagation delay = khoảng cách / tốc độ lan truyền`. **Queuing delay** (trễ hàng đợi — thời gian gói nằm chờ trong hàng đợi của router trước khi tới lượt) thay đổi theo mức tải mạng. **Processing delay** (trễ xử lý — thời gian router kiểm tra header và quyết định chuyển tiếp) thường rất nhỏ.
+
+```mermaid
+flowchart LR
+    A["Host A"] -->|"transmission delay:<br/>đẩy bit lên dây"| L1["Liên kết 1<br/>propagation delay"]
+    L1 --> R["Router<br/>queuing + processing delay"]
+    R -->|"transmission delay"| L2["Liên kết 2<br/>propagation delay"]
+    L2 --> B["Host B"]
+```
+
+<Callout type="warning">
+  Đừng nhầm **transmission delay** với **propagation delay**. Transmission delay
+  phụ thuộc bandwidth và kích thước gói (đẩy bit lên dây nhanh hay chậm);
+  propagation delay phụ thuộc khoảng cách và tốc độ ánh sáng/điện trong môi
+  trường (bit bay qua dây mất bao lâu). Tăng bandwidth chỉ giảm cái thứ nhất.
+</Callout>
+
+## Attenuation — vì sao tín hiệu yếu dần
+
+**Attenuation** (suy hao — sự giảm cường độ tín hiệu theo khoảng cách khi nó lan truyền qua môi trường) là lý do mọi liên kết đều có giới hạn chiều dài. Tín hiệu càng đi xa càng yếu; tới một điểm nó yếu đến mức đầu thu không phân biệt nổi `0` với `1`, gây lỗi bit.
+
+Mức attenuation phụ thuộc trực tiếp vào môi trường — chính là điều bài **Môi trường truyền dẫn** đã so sánh. Copper suy hao nhanh theo khoảng cách (nên twisted pair giới hạn ~100 m), trong khi fiber optic suy hao rất ít (nên single-mode đi được hàng chục km). Để chống attenuation, ta dùng **repeater** (bộ lặp — tái tạo lại tín hiệu về mức ban đầu) hoặc **amplifier**, hoặc đơn giản là chọn môi trường suy hao thấp như fiber cho đường dài.
+
+## Ví dụ thực tế: tính thời gian truyền một file
+
+Đây là phần tính toán có đầu vào và đầu ra quan sát được. Giả sử ta gửi một file **1 MB** (lấy `1 MB = 8 × 10^6 bit`) qua một liên kết **10 Mbps** dài **3000 km**, tốc độ lan truyền trong fiber `≈ 2 × 10^8 m/s`. Bỏ qua queuing và processing delay:
+
+```text
+transmission delay = kích thước / bandwidth
+                   = 8 × 10^6 bit / 10 × 10^6 bps
+                   = 0.8 s
+
+propagation delay  = khoảng cách / tốc độ lan truyền
+                   = 3 × 10^6 m / 2 × 10^8 m/s
+                   = 0.015 s = 15 ms
+
+tổng (xấp xỉ)      = 0.8 + 0.015 ≈ 0.815 s
+```
+
+Ở đây transmission delay (0.8 s) lấn át, nên muốn nhanh hơn ta nên tăng **bandwidth**. Nhưng hãy xét một gói nhỏ ngược lại: một gói **1500 byte** (`= 12 000 bit`) qua liên kết **1 Gbps**:
+
+```text
+transmission delay = 12 000 bit / 1 × 10^9 bps = 12 µs
+```
+
+Với gói nhỏ này, transmission delay gần như bằng 0; thời gian đi chủ yếu là **propagation delay**. Đây là lý do với gói nhỏ đi đường dài (ví dụ ping qua vệ tinh), tăng bandwidth gần như không giúp giảm latency — bit vẫn phải mất thời gian "bay" qua khoảng cách vật lý.
+
+## Tóm tắt nhanh
+
+- **Bandwidth** là dung lượng tối đa lý thuyết; **throughput** là tốc độ thực tế đạt được, bị giới hạn bởi **bottleneck link**.
+- **Latency** = tổng của **transmission**, **propagation**, **queuing**, và **processing delay**.
+- `transmission delay = kích thước gói / bandwidth`; `propagation delay = khoảng cách / tốc độ lan truyền`.
+- Tăng bandwidth chỉ giảm transmission delay, không giảm propagation delay.
+- **Attenuation** làm tín hiệu yếu dần theo khoảng cách; mức suy hao phụ thuộc môi trường (copper suy hao nhiều, fiber suy hao ít), quyết định giới hạn chiều dài liên kết.
+
+## Bài tập
+
+### Bài tập tính toán
+
+1. Một liên kết có bandwidth **100 Mbps**, dài **600 km**, tốc độ lan truyền `2 × 10^8 m/s`. Tính **transmission delay** và **propagation delay** khi gửi một gói **2500 byte** (`= 20 000 bit`). Thành phần nào lớn hơn?
+2. Vẫn liên kết trên, nếu ta gửi một file **50 MB** (`= 400 × 10^6 bit`), tính lại transmission delay. Bây giờ thành phần nào lấn át, và nên tăng gì để truyền nhanh hơn?
+
+### Câu hỏi lý thuyết
+
+3. Một người than phiền: "Tôi đã nâng đường truyền từ 100 Mbps lên 1 Gbps mà ping tới server game ở nước ngoài vẫn 180 ms không đổi." Dựa vào các thành phần delay và attenuation, giải thích vì sao bandwidth cao hơn không cải thiện được con số ping này.
+
+<details>
+  <summary>Đáp án & gợi ý</summary>
+
+1. `transmission delay = 20 000 / (100 × 10^6) = 0.0002 s = 0.2 ms`. `propagation delay = 600 × 10^3 m / (2 × 10^8) = 0.003 s = 3 ms`. **Propagation delay lớn hơn** (3 ms so với 0.2 ms) vì gói nhỏ nhưng đường dài.
+2. `transmission delay = 400 × 10^6 / (100 × 10^6) = 4 s`. Giờ **transmission delay (4 s) lấn át** propagation delay (vẫn 3 ms). Muốn nhanh hơn nên **tăng bandwidth** (hoặc giảm kích thước/nén dữ liệu), vì đó là thành phần đang chi phối.
+3. Ping ~180 ms chủ yếu là **propagation delay** (cộng queuing) do khoảng cách địa lý xa, mà propagation delay = khoảng cách / tốc độ lan truyền — không phụ thuộc bandwidth. Tăng bandwidth chỉ rút ngắn **transmission delay**, vốn đã rất nhỏ với gói ping. Khoảng cách vật lý và tốc độ ánh sáng trong môi trường (cùng attenuation buộc tín hiệu phải đi qua nhiều chặng/repeater) mới quyết định con số này, nên ping gần như không đổi.
+
+</details>
+
+## Nguồn tham khảo
+
+- J. F. Kurose & K. W. Ross, _Computer Networking: A Top-Down Approach_, 8th ed., §1.4 (Delay, Loss, and Throughput in Packet-Switched Networks).
+- A. S. Tanenbaum & D. J. Wetherall, _Computer Networks_, 5th ed., §2.1 (The Theoretical Basis for Data Communication — bandwidth, Nyquist, Shannon).

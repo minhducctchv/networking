@@ -1,0 +1,60 @@
+# Tóm tắt Chương 3: Data Link Layer
+
+Chương này đã đi trọn vẹn nhiệm vụ của Layer 2: gom dòng bit thành frame, gắn địa chỉ, kiểm lỗi, và chuyển frame đúng nơi trong một mạng cục bộ. Dưới đây là các khái niệm chính theo từng bài, sau đó là bài tập ôn tập kết hợp nhiều bài.
+
+## Các khái niệm chính
+
+### Framing & MAC address
+
+- **Framing** phân định ranh giới frame trong dòng bit; **byte stuffing** (chèn escape byte trước byte trùng cờ) và **bit stuffing** (chèn bit `0` sau 5 bit `1` liên tiếp) tránh dữ liệu bị nhầm thành ký hiệu ranh giới.
+- **MAC address** dài 48 bit = **OUI** (24 bit do IEEE cấp) + 24 bit thiết bị; **I/G bit** (LSB của byte đầu) phân biệt unicast (`0`) với multicast (`1`); **broadcast** là `FF:FF:FF:FF:FF:FF`.
+
+### Phát hiện lỗi với CRC
+
+- **CRC** chia dữ liệu cho **generator polynomial** `G` bằng XOR (modulo-2); phần dư `r` bit chính là **FCS** gắn vào cuối frame.
+- Máy nhận chia toàn bộ `T` cho `G`: dư `0` là không lỗi, dư khác `0` là có lỗi. CRC chỉ **phát hiện** chứ không sửa lỗi; Ethernet dùng CRC-32.
+
+### Ethernet & cấu trúc frame
+
+- Frame Ethernet gồm 7 trường: **Preamble** (7 B), **SFD** (1 B), **Dest MAC** (6 B), **Src MAC** (6 B), **Type/Length** (2 B), **Payload** (46 - 1500 B), **FCS** (4 B); kích thước frame 64 - 1518 byte.
+- Trường thứ tư: giá trị ≥ `0x0600` là **EtherType**, ≤ 1500 là **Length**; payload nhỏ hơn 46 byte phải **padding**.
+
+### Switching & VLAN
+
+- Switch tự **học** Source MAC vào **MAC address table** rồi quyết định **forward** / **flood** / **filter** dựa trên Dest MAC.
+- Switch không chia **broadcast domain**; **VLAN** dùng tag **802.1Q** (4 byte, VID 12 bit) để chia, với **access port** (1 VLAN, không tag) và **trunk port** (nhiều VLAN, có tag).
+
+## Bài tập ôn tập
+
+1. **(Lý thuyết — kết hợp "Framing & MAC address" + "Ethernet & cấu trúc frame")** MAC address xuất hiện ở những trường nào trong frame Ethernet? Trường nào của frame Ethernet đảm nhiệm vai trò "framing" (đánh dấu ranh giới bắt đầu)? Liên hệ khái niệm framing tổng quát với cách Ethernet thực hiện nó.
+
+2. **(Tính toán — kết hợp "Phát hiện lỗi với CRC" + "Ethernet & cấu trúc frame")** Cho `D = 10110` và `G = 101` (bậc `r = 2`). Tính **FCS** và viết frame `T` truyền đi. Trong frame Ethernet thật, FCS nằm ở trường nào và dài bao nhiêu byte?
+
+3. **(Tình huống — kết hợp "Switching & VLAN" + "Framing & MAC address")** Một switch nhận frame có Dest MAC `FF:FF:FF:FF:FF:FF`. Dựa vào loại địa chỉ này và quy tắc chuyển frame, switch xử lý ra sao? Nếu máy nguồn và máy đích được đặt ở hai VLAN khác nhau thì broadcast đó có tới được máy đích không?
+
+4. **(Tính toán — kết hợp "Ethernet & cấu trúc frame" + "Switching & VLAN")** Tag 802.1Q chèn thêm 4 byte vào frame. Tính kích thước tối đa của một frame Ethernet **có** tag VLAN (tính từ Dest MAC tới FCS).
+
+<details>
+  <summary>Đáp án</summary>
+
+1. MAC address xuất hiện ở hai trường: **Destination MAC** (6 byte) và **Source MAC** (6 byte). Vai trò framing (đánh dấu bắt đầu) do **Preamble** (7 byte, đồng bộ clock) và **SFD** (1 byte, `0xD5`) đảm nhiệm. Framing tổng quát là việc phân định ranh giới frame trong dòng bit; Ethernet hiện thực hóa nó bằng mẫu đồng bộ Preamble + SFD ở đầu và độ dài/FCS xác định phần cuối, thay cho kỹ thuật flag + stuffing của HDLC/PPP.
+
+2. Thêm 2 bit `0`: `1011000`, chia cho `101`:
+
+   ```text
+       1 0 1 1 0 0 0
+   XOR 1 0 1
+       ---------
+       0 0 0 1 0 0 0
+   XOR     1 0 1
+       ---------
+       0 0 0 0 0 1 0   remainder = 10
+   ```
+
+   Vậy **FCS = `10`**, frame `T = 10110 10` ⇒ `1011010`. Trong Ethernet thật, FCS là trường **cuối cùng**, dài **4 byte**, chứa CRC-32.
+
+3. `FF:FF:FF:FF:FF:FF` là địa chỉ **broadcast**, nên switch **flood** frame ra mọi cổng trừ cổng nhận. Tuy nhiên broadcast chỉ lan trong cùng một **broadcast domain**: nếu nguồn và đích ở hai **VLAN** khác nhau, switch coi chúng thuộc hai broadcast domain riêng, nên frame broadcast **không** tới được máy đích (phải qua router/định tuyến giữa các VLAN).
+
+4. Frame Ethernet chuẩn tối đa 1518 byte (Dest MAC tới FCS). Thêm 4 byte tag 802.1Q ⇒ tối đa `1518 + 4 = 1522` byte.
+
+</details>

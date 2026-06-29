@@ -1,0 +1,48 @@
+# Tóm tắt Chương 5: Transport Layer
+
+Chương này đã hoàn thiện bức tranh end-to-end: sau khi packet tới đúng máy nhờ tầng Network, Transport Layer đưa dữ liệu tới **đúng tiến trình** và cho ứng dụng chọn giữa một kênh tin cậy (TCP) với một kênh nhanh gọn (UDP). Dưới đây là các khái niệm chính theo từng bài, sau đó là bài tập ôn tập kết hợp nhiều bài.
+
+## Các khái niệm chính
+
+### Port & Socket
+
+- **Port** là số 16-bit (`0 – 65535`) định danh tiến trình trên một máy, chia thành ba dải: **well-known** (`0 – 1023`), **registered** (`1024 – 49151`), **dynamic/ephemeral** (`49152 – 65535`).
+- **Socket** = `IP:port`; một kết nối được xác định duy nhất bằng **socket pair** (4-tuple). **Demultiplexing** dùng 2-tuple cho UDP và 4-tuple cho TCP để giao dữ liệu đúng socket.
+
+### TCP
+
+- TCP là **connection-oriented**, **reliable**, truyền **byte stream**; mở kết nối bằng **three-way handshake** (`SYN` → `SYN-ACK` → `ACK`).
+- **Flow control** dùng **sliding window** (`rwnd`) bảo vệ máy nhận; **congestion control** dùng `cwnd` (slow start tăng cấp số nhân, congestion avoidance tăng tuyến tính) bảo vệ mạng. Lượng gửi bị chặn bởi `min(rwnd, cwnd)`.
+
+### UDP
+
+- UDP là **connectionless**, gửi từng **datagram** độc lập với header chỉ **8 byte** (Source Port, Destination Port, Length, Checksum).
+- Ba khác biệt với TCP: không đảm bảo gửi đến, không đảm bảo thứ tự, overhead thấp và không kiểm soát tốc độ. Hợp với **DNS**, **VoIP/video call**, gaming, streaming.
+
+### So sánh TCP & UDP
+
+- Đánh đổi cốt lõi: TCP đổi **độ trễ/overhead** lấy **độ tin cậy + đúng thứ tự**; UDP đổi các đảm bảo đó lấy **tốc độ + gọn nhẹ**.
+- Câu hỏi chọn lựa: **cần đủ và đúng thứ tự?** Có → TCP; không và nhạy độ trễ → UDP. Mặc định nên chọn TCP.
+
+## Bài tập ôn tập
+
+1. **(Lý thuyết — kết hợp "Port & Socket" + "TCP")** Khi một client mở kết nối TCP tới web server `203.0.113.5:443`, hãy mô tả: (a) client lấy source port từ dải nào, (b) socket pair (4-tuple) của kết nối, và (c) ba segment của three-way handshake đi qua cặp socket đó. Vì sao server cần đủ 4-tuple để demultiplex thay vì chỉ destination port?
+
+2. **(Tình huống — kết hợp "UDP" + "So sánh TCP & UDP")** Một nhóm phát triển ứng dụng gọi video chọn UDP. Giải thích bằng đánh đổi "độ trễ đổi độ tin cậy" vì sao họ không chọn TCP, và nêu rõ cơ chế nào của TCP (handshake, gửi lại gói, hay đúng thứ tự) sẽ gây hại cho trải nghiệm gọi video.
+
+3. **(Tính toán — kết hợp "TCP" + "Port & Socket")** Một kết nối TCP có `rwnd = 32` KB và `cwnd = 12` KB (đang ở pha slow start). (a) Máy gửi được phép có tối đa bao nhiêu dữ liệu chưa ACK? (b) Nếu không mất gói, sau 1 RTT nữa `cwnd` là bao nhiêu? (c) Lượng dữ liệu cho phép gửi khi đó thay đổi thế nào?
+
+4. **(Tình huống — kết hợp "So sánh TCP & UDP" + "UDP")** Với mỗi ứng dụng, chọn protocol và giải thích: (a) một game bắn súng cập nhật vị trí người chơi 60 lần/giây, (b) một dịch vụ truyền file sao lưu ban đêm, (c) phân giải tên miền `example.com`.
+
+<details>
+  <summary>Đáp án</summary>
+
+1. (a) Client lấy source port từ dải **dynamic/ephemeral** (`49152 – 65535`). (b) Socket pair ví dụ: `(192.0.2.10, 51514, 203.0.113.5, 443)`. (c) Cả ba segment `SYN`, `SYN-ACK`, `ACK` đều đi qua đúng cặp socket này (chỉ đảo chiều src/dst tùy hướng). Server cần đủ **4-tuple** vì nhiều client (hoặc nhiều kết nối từ cùng client) đều tới destination `…:443`; chỉ có source IP + source port mới tách được chúng thành các socket riêng.
+
+2. Gọi video nhạy với **độ trễ**: dữ liệu cũ tới muộn thì vô dụng. TCP buộc trả giá độ trễ để đổi độ tin cậy, mà ở đây độ tin cậy tuyệt đối không cần thiết. Cơ chế gây hại nhất là **gửi lại gói mất** kết hợp **giữ đúng thứ tự**: khi một gói mất, mọi dữ liệu mới phía sau bị kẹt chờ gói cũ (head-of-line blocking) gây giật/lag; handshake cũng thêm một RTT trễ ban đầu.
+
+3. (a) Cho phép = `min(rwnd, cwnd) = min(32, 12) = 12` KB. (b) Slow start gấp đôi mỗi RTT, nên `cwnd = 24` KB. (c) Lượng cho phép mới = `min(32, 24) = 24` KB, tức tăng từ 12 lên 24 KB (vẫn bị `cwnd` chặn, chưa chạm trần `rwnd`).
+
+4. (a) Game bắn súng → **UDP**: cập nhật vị trí mới quan trọng hơn vị trí cũ, nhạy độ trễ, chịu được mất vài gói. (b) Sao lưu file → **TCP**: cần đủ và đúng thứ tự tuyệt đối, không nhạy độ trễ. (c) Phân giải `example.com` (DNS) → **UDP**: trao đổi siêu ngắn, mất thì hỏi lại, tránh chi phí handshake.
+
+</details>

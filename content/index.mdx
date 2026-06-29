@@ -1,3 +1,45 @@
-# Welcome to Nextra
+import { Cards } from "nextra/components";
 
-Hello, world!
+# Học Mạng máy tính từ cơ bản đến nâng cao
+
+Đây là tài liệu học **computer networking** (mạng máy tính — hệ thống các thiết bị kết nối với nhau để trao đổi dữ liệu) được viết bằng tiếng Việt, dành cho lập trình viên muốn nắm vững nền tảng mạng để xây dựng, vận hành và gỡ lỗi hệ thống một cách tự tin. Nội dung đi từ những khái niệm nền tảng nhất cho tới các chủ đề hiện đại như SDN, cloud và container networking.
+
+## Mục tiêu khóa học
+
+Sau khi hoàn thành lộ trình này, bạn sẽ có thể:
+
+- Hiểu cách dữ liệu di chuyển qua từng tầng của mô hình **OSI** và **TCP/IP**.
+- Tính toán **subnet**, đọc hiểu địa chỉ **IPv4/IPv6** và cấu hình **routing** cơ bản.
+- Giải thích cơ chế hoạt động của **TCP**, **UDP**, **DNS**, **HTTP/HTTPS** và các protocol tầng ứng dụng phổ biến.
+- Nhận diện các mối đe dọa bảo mật mạng và áp dụng nguyên tắc thiết kế an toàn.
+- Sử dụng thành thạo các công cụ chẩn đoán như Wireshark, `tcpdump`, `ping`, `traceroute` để khắc phục sự cố mạng thực tế.
+
+## Đối tượng người đọc
+
+Khóa học phù hợp với lập trình viên, sinh viên IT và kỹ sư DevOps đã quen với việc sử dụng máy tính và dòng lệnh, nhưng chưa có nền tảng vững về mạng. Bạn không cần kiến thức mạng trước đó — mỗi khái niệm đều được giải thích từ đầu theo thứ tự tăng dần độ khó.
+
+## Quy ước ngôn ngữ
+
+Toàn bộ phần giải thích được viết bằng **tiếng Việt**, nhưng các thuật ngữ kỹ thuật (technical term) được giữ nguyên bằng **tiếng Anh** — ví dụ `subnet mask`, `routing table`, `three-way handshake`. Lần đầu một thuật ngữ xuất hiện trong mỗi bài học, nó sẽ kèm một chú thích tiếng Việt ngắn gọn. Mọi đoạn code, câu lệnh và file cấu hình đều giữ nguyên tiếng Anh để bạn quen với cú pháp chuẩn của ngành.
+
+## Lộ trình học
+
+Khóa học gồm 9 chương, sắp xếp từ nền tảng đến nâng cao. Hãy học tuần tự vì mỗi chương xây dựng dựa trên chương trước.
+
+<Cards>
+  <Cards.Card
+    title="Chương 1: Nền tảng mạng máy tính"
+    href="/networking-fundamentals"
+  />
+  <Cards.Card title="Chương 2: Physical Layer" href="/physical-layer" />
+  <Cards.Card title="Chương 3: Data Link Layer" href="/data-link-layer" />
+  <Cards.Card title="Chương 4: Network Layer" href="/network-layer" />
+  <Cards.Card title="Chương 5: Transport Layer" href="/transport-layer" />
+  <Cards.Card title="Chương 6: Application Layer" href="/application-layer" />
+  <Cards.Card title="Chương 7: Network Security" href="/network-security" />
+  <Cards.Card title="Chương 8: Modern Networking" href="/modern-networking" />
+  <Cards.Card
+    title="Chương 9: Practical Tools & Troubleshooting"
+    href="/practical-tools"
+  />
+</Cards>

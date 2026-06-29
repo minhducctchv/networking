@@ -1,0 +1,33 @@
+import { Cards } from "nextra/components";
+
+# Chương 9: Practical Tools & Troubleshooting
+
+Chương cuối cùng này chuyển từ lý thuyết sang thực hành: thay vì học một tầng mới, bạn sẽ học cách **quan sát** và **chẩn đoán** mọi tầng đã đi qua bằng các công cụ mà kỹ sư mạng dùng hằng ngày. Bạn sẽ bắt và đọc từng gói tin bằng Wireshark và tcpdump, dùng bộ công cụ dòng lệnh (ping, traceroute, nslookup, dig, netstat, ss) để soi từng chặng của một kết nối, và ghép tất cả lại thành một **phương pháp troubleshooting** có hệ thống để tìm ra lỗi nằm ở đâu rồi sửa nó. Mục tiêu là biến kiến thức từ Chương 1 đến Chương 8 thành kỹ năng nhìn được input/output thật của mạng.
+
+## Mục tiêu học tập
+
+- Phân biệt **capture filter** và **display filter**, và viết được các bộ lọc cơ bản cho cả Wireshark lẫn tcpdump để bắt và lọc đúng lưu lượng cần xem.
+- Sử dụng thành thạo các **diagnostic tool** (ping, traceroute, nslookup, dig, netstat, ss), đọc và diễn giải được output của từng công cụ.
+- Áp dụng một **phương pháp troubleshooting** có hệ thống: từ triệu chứng, chọn đúng công cụ, khoanh vùng tầng bị lỗi và đề xuất cách khắc phục.
+- Kết hợp ít nhất hai công cụ trong một tình huống thật để xác định nguyên nhân gốc của một sự cố mạng.
+
+## Các bài học trong chương
+
+<Cards>
+  <Cards.Card
+    title="Phân tích gói tin"
+    href="/practical-tools/packet-analysis"
+  />
+  <Cards.Card
+    title="Công cụ chẩn đoán"
+    href="/practical-tools/diagnostic-tools"
+  />
+  <Cards.Card
+    title="Phương pháp troubleshooting"
+    href="/practical-tools/troubleshooting-methodology"
+  />
+</Cards>
+
+## Kiến thức tiên quyết
+
+Đây là chương ứng dụng nên nó dựa trên gần như toàn bộ khóa học. Từ **Chương 1 (Nền tảng mạng máy tính)** bạn cần mô hình OSI/TCP-IP để biết một công cụ đang soi tầng nào. Từ **Chương 3 (Data Link Layer)** và **Chương 4 (Network Layer)** bạn cần khái niệm MAC address, IP, gateway và routing để đọc output của tcpdump và traceroute. Từ **Chương 5 (Transport Layer)** bạn cần hiểu port, socket, three-way handshake và cờ TCP (`SYN`, `ACK`) — đây là thứ bạn sẽ thấy trực tiếp trong gói bắt được. Từ **Chương 6 (Application Layer)** bạn cần DNS và HTTP để hiểu nslookup, dig và các phiên web. Nói ngắn gọn: chương này dạy cách *nhìn thấy* mọi thứ các chương trước đã mô tả.

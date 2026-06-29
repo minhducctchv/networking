@@ -1,0 +1,45 @@
+import { Cards } from "nextra/components";
+
+# Chương 8: Modern Networking
+
+Chương này lấy toàn bộ nền tảng đã học ở bảy chương trước — mô hình phân lớp, IP/subnet, routing, switching/VLAN, encapsulation và firewall — rồi soi chúng dưới góc nhìn của hạ tầng hiện đại: mạng được điều khiển bằng phần mềm, mạng trên cloud, mạng cho container, và mạng ảo hóa bằng overlay. Mục tiêu không phải học lại từ đầu mà là thấy các khái niệm truyền thống được **mở rộng** hoặc **thay thế** như thế nào khi quy mô và tốc độ thay đổi vượt khả năng cấu hình thủ công từng thiết bị.
+
+## Mục tiêu học tập
+
+- Phân biệt **control plane** và **data plane**, và giải thích vì sao **SDN** tách rời hai thành phần này so với router truyền thống.
+- Mô tả các khối nền tảng của **cloud networking** (VPC, subnet, security group, load balancer) theo cách provider-agnostic, và ánh xạ chúng sang thuật ngữ của AWS, GCP và Azure.
+- Giải thích mô hình mạng của **Docker** (bridge, host, none, overlay) và của **Kubernetes** (Pod-to-Pod, Service/ClusterIP).
+- Hiểu **overlay network** và cách các tunneling protocol như **VXLAN** và **GRE** đóng gói lưu lượng, cùng vai trò của **virtual switch**.
+- Với mỗi khái niệm hiện đại, chỉ ra nó kế thừa khái niệm truyền thống nào từ các chương trước và khác biệt ở đâu.
+
+## Các bài học trong chương
+
+<Cards>
+  <Cards.Card
+    title="Software-Defined Networking"
+    href="/modern-networking/sdn"
+  />
+  <Cards.Card
+    title="Cloud Networking"
+    href="/modern-networking/cloud-networking"
+  />
+  <Cards.Card
+    title="Container Networking"
+    href="/modern-networking/container-networking"
+  />
+  <Cards.Card
+    title="Network Virtualization & Overlay"
+    href="/modern-networking/network-virtualization"
+  />
+</Cards>
+
+## Kiến thức tiên quyết
+
+Chương này xây trực tiếp trên các chương trước, nên bạn nên nắm vững:
+
+- **Chương 1 — Nền tảng mạng máy tính**: mô hình OSI/TCP-IP và **encapsulation** (đóng gói), vì tunneling và overlay chính là encapsulation áp dụng lại.
+- **Chương 3 — Data Link Layer**: **switching** và **VLAN** (802.1Q), nền tảng để hiểu virtual switch và VXLAN.
+- **Chương 4 — Network Layer**: **IPv4 addressing**, **subnetting**, **routing** và **NAT**, nền tảng để hiểu VPC, subnet trên cloud và mạng của Pod.
+- **Chương 7 — Network Security**: **firewall** và **access control**, nền tảng để hiểu security group trên cloud.
+
+Mỗi bài học sẽ gọi tên cụ thể khái niệm cũ mà nó dựa vào, nên nếu thấy một thuật ngữ chưa chắc, bạn có thể quay lại đúng bài được nhắc tới.

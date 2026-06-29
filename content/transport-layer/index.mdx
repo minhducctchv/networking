@@ -1,0 +1,26 @@
+import { Cards } from "nextra/components";
+
+# Chương 5: Transport Layer
+
+Chương này tập trung vào **Transport Layer** (tầng vận chuyển — tầng L4 trong mô hình OSI, lo việc truyền dữ liệu end-to-end giữa hai tiến trình ứng dụng). Sau khi các chương trước đưa dữ liệu đi từ bit trên dây (Physical), qua frame trong một mạng (Data Link), tới packet xuyên nhiều mạng (Network), chương này trả lời câu hỏi còn lại: làm sao để dữ liệu tới **đúng ứng dụng** trên máy đích, và làm sao chọn giữa một kênh truyền tin cậy (TCP) với một kênh nhanh gọn (UDP). Đây là tầng mà lập trình viên chạm vào trực tiếp nhất khi viết code mạng.
+
+## Mục tiêu học tập
+
+- Giải thích được khái niệm **port** và **socket**, các dải port (well-known, registered, dynamic), và vai trò của **multiplexing/demultiplexing** trong việc đưa dữ liệu tới đúng tiến trình.
+- Mô tả được **three-way handshake** của TCP và đọc được chuỗi cờ `SYN` / `SYN-ACK` / `ACK`.
+- Trình bày cơ chế **flow control** (sliding window) và **congestion control** (slow start, congestion avoidance) của TCP.
+- Liệt kê được bản chất connectionless của **UDP**, ít nhất 3 đặc điểm khác TCP và ít nhất 2 use case nên dùng UDP.
+- So sánh TCP với UDP theo nhiều tiêu chí và biết chọn protocol phù hợp cho từng loại ứng dụng.
+
+## Các bài học trong chương
+
+<Cards>
+  <Cards.Card title="Port & Socket" href="/transport-layer/ports-and-sockets" />
+  <Cards.Card title="TCP" href="/transport-layer/tcp" />
+  <Cards.Card title="UDP" href="/transport-layer/udp" />
+  <Cards.Card title="So sánh TCP & UDP" href="/transport-layer/tcp-vs-udp" />
+</Cards>
+
+## Kiến thức tiên quyết
+
+Bạn cần nắm **Chương 1: Nền tảng mạng máy tính**, đặc biệt bài **Mô hình OSI 7 tầng** (để biết Transport là L4, nhận dữ liệu từ tầng trên và đẩy segment xuống Network ở L3) và bài **Đóng gói & tháo gói dữ liệu** (để hiểu đơn vị dữ liệu ở tầng này là **segment**). Bạn cũng nên đã đọc **Chương 4: Network Layer**, vì một **socket** được tạo từ địa chỉ IP (do tầng Network cung cấp) ghép với một port. Không cần biết lập trình mạng trước; mọi thuật ngữ đều được giải thích khi xuất hiện lần đầu.

@@ -1,0 +1,63 @@
+# Tóm tắt Chương 4: Network Layer
+
+Chương này đã đi trọn nhiệm vụ của Layer 3: gán địa chỉ logic cho thiết bị, chia một mạng lớn thành nhiều mạng con, chọn đường cho packet đi xuyên các mạng, và cho phép địa chỉ private ra được Internet. Dưới đây là các khái niệm chính theo từng bài, sau đó là bài tập ôn tập kết hợp nhiều bài.
+
+## Các khái niệm chính
+
+### Địa chỉ IPv4
+
+- Địa chỉ IPv4 là số **32-bit**, viết dạng **dotted decimal** (4 octet `0`–`255`), chia thành **network portion** và **host portion**.
+- **Subnet mask** quyết định ranh giới network/host; **CIDR** `/n` là cách viết gọn (ví dụ `/24` ⇔ `255.255.255.0`), và `IP AND mask` cho ra network address.
+
+### Chia mạng con (Subnetting)
+
+- Subnetting **mượn bit host** để tạo mạng con; **block size** = `256 - octet_mask` giúp tìm nhanh các network address liên tiếp.
+- **Network address** có toàn bit host `= 0`, **broadcast** có toàn bit host `= 1`, và số **host khả dụng** = `2^(32-n) - 2`.
+
+### Địa chỉ IPv6
+
+- Địa chỉ IPv6 dài **128 bit**, viết bằng 8 nhóm hex; rút gọn bằng cách bỏ leading zero và thay một chuỗi nhóm `0` bằng `::` (chỉ một lần).
+- Ba kiểu địa chỉ **unicast / multicast / anycast** (không có broadcast); so với IPv4, IPv6 có không gian khổng lồ, header 40 byte cố định không checksum, và tự cấu hình bằng **SLAAC**.
+
+### Cơ bản về Routing
+
+- Router quyết định đường đi dựa trên **routing table** (longest prefix match, next hop, default route `0.0.0.0/0`).
+- **Static routing** đơn giản nhưng không thích nghi; **dynamic routing** tự cập nhật — **RIP** (distance-vector), **OSPF** (link-state), **BGP** (path-vector, xương sống Internet).
+
+### NAT
+
+- **NAT** viết lại địa chỉ trong header để private address ra Internet, dựa trên một **translation table**.
+- **Static NAT** (1–1 cố định), **Dynamic NAT** (1–1 tạm từ pool), **PAT** (nhiều máy chung một địa chỉ public, phân biệt bằng port nguồn).
+
+## Bài tập ôn tập
+
+1. **(Lý thuyết — kết hợp "Địa chỉ IPv4" + "Địa chỉ IPv6")** Lập bảng so sánh IPv4 và IPv6 trên ba tiêu chí: độ dài địa chỉ, kích thước/đặc điểm header, và cách cấu hình địa chỉ tự động. Giải thích vì sao việc bỏ header checksum trong IPv6 giúp router nhanh hơn, liên hệ tới khái niệm next hop ở bài Routing.
+
+2. **(Tính toán — kết hợp "Chia mạng con (Subnetting)" + "Địa chỉ IPv4")** Cho host `172.16.50.200/22`. Hãy dùng phép `AND` và quy tắc block size để tính network address, broadcast address, số host khả dụng và dải host. Cho biết octet nào là "octet đang xét" và vì sao.
+
+3. **(Tình huống — kết hợp "NAT" + "Chia mạng con (Subnetting)" + "Cơ bản về Routing")** Một văn phòng được cấp `192.168.20.0/24` và một địa chỉ public duy nhất từ ISP. Họ cần 3 phòng ban tách biệt, mỗi phòng ≥ 50 host, và mọi máy đều ra được Internet. Hãy đề xuất: (a) cách chia subnet; (b) dạng NAT phù hợp để ra Internet; (c) loại route nào nên trỏ ra ISP.
+
+4. **(Tình huống — kết hợp "Cơ bản về Routing" + "Địa chỉ IPv4")** Cho dòng routing table `10.10.0.0/16 via 192.168.1.254 dev eth0`. Diễn giải mạng đích, next hop, interface ra; và cho biết một packet tới `10.10.5.20` có khớp dòng này không, vì sao.
+
+<details>
+  <summary>Đáp án</summary>
+
+1. Bảng so sánh: **độ dài** 32-bit (IPv4) so với 128-bit (IPv6); **header** IPv4 biến đổi 20–60 byte có checksum, IPv6 cố định 40 byte không checksum; **cấu hình tự động** IPv4 chủ yếu dùng DHCP, IPv6 dùng SLAAC (không cần server). Bỏ checksum giúp router nhanh hơn vì ở **mỗi next hop**, IPv4 buộc phải tính lại checksum (do TTL thay đổi), còn IPv6 thì không, nên việc chuyển tiếp tại mỗi router tốn ít xử lý hơn.
+
+2. `/22` ⇒ `h = 32 - 22 = 10` bit host; mask = `255.255.252.0`, **octet đang xét là octet thứ ba** vì ranh giới `/22` rơi vào đó (octet 3 có `252 = 11111100`). Block size octet 3 = `256 - 252 = 4`, nên các network address ở octet 3 là `0, 4, 8, ..., 48, 52, ...`. Octet 3 của host là `50`, nằm giữa `48` và `52`, nên:
+
+   ```text
+   IP:        172.16.50.200 = 10101100.00010000.00110010.11001000
+   Mask /22:                  11111111.11111111.11111100.00000000
+   AND        --------------------------------------------------------
+   Network:   172.16.48.0   = 10101100.00010000.00110000.00000000
+
+   Broadcast = ngay trước network kế tiếp (172.16.52.0) = 172.16.51.255
+   Host khả dụng = 2^10 - 2 = 1022 ; dải = 172.16.48.1 .. 172.16.51.254
+   ```
+
+3. (a) Cần ≥ 50 host ⇒ chọn `h = 6` (`2^6 - 2 = 62 ≥ 50`) ⇒ prefix `/26`, chia `/24` thành 4 mạng con `192.168.20.0/26`, `.64/26`, `.128/26`, `.192/26` (dùng 3, dư 1 dự phòng). (b) Vì chỉ có **một** địa chỉ public cho nhiều máy, dùng **PAT** để mọi host chia sẻ địa chỉ đó. (c) Trỏ ra ISP bằng một **static default route** `0.0.0.0/0` tới địa chỉ router của ISP.
+
+4. Mạng đích là `10.10.0.0/16`; **next hop** là `192.168.1.254`; **interface ra** là `eth0`. Packet tới `10.10.5.20` **có** khớp, vì 16 bit đầu của `10.10.5.20` là `10.10`, đúng bằng phần network `10.10.0.0/16`; do đó packet được gửi qua `eth0` tới next hop `192.168.1.254`.
+
+</details>

@@ -1,0 +1,24 @@
+import { Cards } from "nextra/components";
+
+# Chương 6: Application Layer
+
+Chương này bước lên đỉnh của ngăn xếp mạng — nơi các **application** (ứng dụng — phần mềm mà người dùng và lập trình viên tương tác trực tiếp) gặp gỡ mạng máy tính. Sau khi đã hiểu cách Transport Layer (Chương 5) đưa dữ liệu end-to-end giữa hai tiến trình, ở đây bạn sẽ học những protocol mà lập trình viên dùng hằng ngày: DNS để biến tên miền thành địa chỉ, HTTP/HTTPS để trao đổi nội dung web an toàn, và SMTP/FTP/SSH cho email, truyền file và truy cập từ xa. Mục tiêu là giúp bạn không chỉ "biết tên" mà còn quan sát được input/output thật của từng protocol.
+
+## Mục tiêu học tập
+
+- Mô tả quá trình **DNS resolution** theo từng bước, phân biệt **recursive query** và **iterative query**, và nêu mục đích của ít nhất 4 record type (A, AAAA, CNAME, MX).
+- Phân tích cấu trúc một **HTTP** request/response (method, headers, body), phân loại đủ 5 nhóm **status code** và giải thích vai trò của **TLS** trong **HTTPS**.
+- Giải thích mục đích, port hoạt động và một kịch bản thực tế cho mỗi protocol **SMTP**, **FTP** và **SSH**.
+- Đọc và diễn giải output thực tế từ các lệnh như `dig`, một phiên `curl`/HTTP thô và một phiên `ssh`.
+
+## Các bài học trong chương
+
+<Cards>
+  <Cards.Card title="DNS" href="/application-layer/dns" />
+  <Cards.Card title="HTTP & HTTPS" href="/application-layer/http-and-https" />
+  <Cards.Card title="SMTP, FTP & SSH" href="/application-layer/smtp-ftp-ssh" />
+</Cards>
+
+## Kiến thức tiên quyết
+
+Bài học giả định bạn đã nắm các chương trước. Từ **Chương 1 (Nền tảng mạng máy tính)** bạn cần khái niệm protocol, mô hình phân lớp và vị trí của Application Layer trong OSI/TCP-IP. Từ **Chương 4 (Network Layer)** bạn cần hiểu IPv4/IPv6 vì DNS chính là cầu nối giữa tên miền và các địa chỉ này. Quan trọng nhất, từ **Chương 5 (Transport Layer)** bạn cần nắm vững port, socket cùng sự khác biệt giữa TCP và UDP — vì mỗi application protocol trong chương đều chạy trên TCP hoặc UDP tại một port xác định.

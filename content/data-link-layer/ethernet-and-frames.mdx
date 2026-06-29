@@ -1,0 +1,102 @@
+import { Callout } from "nextra/components";
+
+# Ethernet & cấu trúc frame
+
+**Ethernet** (chuẩn mạng cục bộ có dây phổ biến nhất, định nghĩa cách đóng frame và truyền trên dây) là công nghệ Layer 2 thống trị trong LAN ngày nay. Phiên bản được chuẩn hóa bởi **IEEE 802.3** (bộ tiêu chuẩn của IEEE quy định Ethernet ở tầng Physical và Data Link). Bài học này mổ xẻ một frame Ethernet thành từng trường, nêu rõ kích thước và mục đích của mỗi trường, kèm một frame ví dụ với giá trị cụ thể.
+
+## Cấu trúc frame Ethernet
+
+Một frame Ethernet gồm bảy trường, từ Preamble ở đầu tới FCS ở cuối. Sơ đồ dưới đây dùng ASCII để giữ đúng tỉ lệ các trường theo byte:
+
+```text
++----------+-----+-----------+-----------+----------+------------------+-------+
+| Preamble | SFD | Dest MAC  | Src MAC   | Type/Len | Payload (Data)   |  FCS  |
+| 7 byte   | 1 B | 6 byte    | 6 byte    | 2 byte   | 46 - 1500 byte   |  4 B  |
++----------+-----+-----------+-----------+----------+------------------+-------+
+|<-- Layer 1 -->|<------------------- Frame 802.3 (64 - 1518 byte) ---------->|
+```
+
+### Liệt kê từng trường
+
+- **Preamble — 7 byte.** Bảy byte `0x55` (mẫu `10101010` lặp lại) giúp đồng bộ đồng hồ (clock) giữa máy gửi và máy nhận trước khi dữ liệu thật bắt đầu.
+- **SFD — 1 byte.** **SFD** (Start Frame Delimiter — byte đánh dấu bắt đầu frame) có giá trị `0xD5` (`10101011`). Hai bit `1` cuối báo cho máy nhận: byte ngay sau là đầu của trường địa chỉ.
+- **Destination MAC — 6 byte.** Địa chỉ MAC của giao diện đích trên cùng liên kết; có thể là unicast, multicast hoặc broadcast (`FF:FF:FF:FF:FF:FF`).
+- **Source MAC — 6 byte.** Địa chỉ MAC của giao diện gửi; luôn là unicast.
+- **Type/Length — 2 byte.** Nếu giá trị ≥ `0x0600` (1536) thì là **EtherType** (mã loại — cho biết protocol tầng trên, ví dụ `0x0800` = IPv4); nếu ≤ 1500 thì là **Length** (độ dài payload theo kiểu IEEE 802.3 nguyên gốc).
+- **Payload (Data) — 46 đến 1500 byte.** Dữ liệu tầng trên (thường là một IP packet). **MTU** (Maximum Transmission Unit — kích thước payload tối đa, mặc định 1500 byte với Ethernet).
+- **FCS — 4 byte.** **FCS** (Frame Check Sequence — chuỗi kiểm tra frame) chứa CRC-32 tính trên toàn bộ frame từ Dest MAC tới hết Payload, để máy nhận phát hiện lỗi.
+
+<Callout type="info">
+  Preamble và SFD (tổng 8 byte) được coi là phần đồng bộ ở Layer 1, **không**
+  tính vào kích thước frame 64 - 1518 byte. Frame nhỏ hơn 64 byte (phần Dest MAC
+  tới FCS) bị xem là "runt" và bị loại bỏ.
+</Callout>
+
+## EtherType: Type hay Length?
+
+Đây là điểm dễ nhầm giữa hai biến thể. Khung **Ethernet II** (còn gọi DIX) dùng trường này làm **Type**, còn khung **IEEE 802.3** nguyên gốc dùng làm **Length**. Quy ước phân biệt rất gọn: giá trị ≤ 1500 là Length, giá trị ≥ 1536 (`0x0600`) là Type. Phần lớn lưu lượng Internet ngày nay dùng định dạng Ethernet II với EtherType.
+
+| EtherType | Protocol tầng trên |
+| --------- | ------------------ |
+| `0x0800`  | IPv4               |
+| `0x0806`  | ARP                |
+| `0x86DD`  | IPv6               |
+| `0x8100`  | VLAN tag (802.1Q)  |
+
+## Kích thước tối thiểu và đệm (padding)
+
+Frame Ethernet phải dài tối thiểu 64 byte (tính từ Dest MAC tới FCS) để cơ chế phát hiện đụng độ hoạt động đúng trên Ethernet cổ điển. Nếu payload ngắn hơn 46 byte, tầng Data Link thêm **padding** (đệm — các byte `0` chèn thêm để đạt kích thước payload tối thiểu 46 byte). Cận trên: payload tối đa 1500 byte ⇒ frame tối đa 1518 byte.
+
+```text
+Kích thước frame = 6 (Dst) + 6 (Src) + 2 (Type) + Payload + 4 (FCS)
+  - Payload tối thiểu 46  -> frame  64 byte
+  - Payload tối đa  1500  -> frame 1518 byte
+```
+
+## Frame ví dụ: một ARP request quảng bá
+
+Quan sát một frame thật với giá trị từng trường (các byte viết dạng hex). Vì là ARP request đi hỏi "ai có IP này", địa chỉ đích là broadcast và EtherType là `0x0806`:
+
+```text
+Preamble : 55 55 55 55 55 55 55
+SFD      : D5
+Dst MAC  : FF FF FF FF FF FF          (broadcast - gửi mọi máy trong LAN)
+Src MAC  : 00 1A 2B 3C 4D 5E          (card mạng người gửi)
+Type     : 08 06                      (0x0806 = ARP)
+Payload  : 00 01 08 00 06 04 ...      (28 byte ARP + 18 byte padding = 46 byte)
+FCS      : A1 B2 C3 D4                (CRC-32, máy nhận dùng để kiểm lỗi)
+```
+
+Ở đây ARP message chỉ dài 28 byte nên cần đệm thêm 18 byte `0` cho đủ payload 46 byte. Máy nhận đọc Dst MAC broadcast nên nhận frame, kiểm FCS, rồi chuyển payload lên cho module ARP.
+
+## Tóm tắt nhanh
+
+- Frame Ethernet gồm: **Preamble** (7 B), **SFD** (1 B), **Dest MAC** (6 B), **Src MAC** (6 B), **Type/Length** (2 B), **Payload** (46 - 1500 B), **FCS** (4 B).
+- **Preamble + SFD** (8 B) là phần đồng bộ Layer 1, không tính vào kích thước frame 64 - 1518 byte.
+- Trường thứ tư: ≥ `0x0600` là **EtherType** (Type), ≤ 1500 là **Length**.
+- Payload nhỏ hơn 46 byte phải **padding**; **FCS** mang CRC-32 để phát hiện lỗi.
+
+## Bài tập
+
+### Câu hỏi lý thuyết
+
+1. Liệt kê đủ bảy trường của frame Ethernet kèm kích thước. Trường nào **không** được tính vào kích thước frame tối thiểu 64 byte, và vì sao?
+
+### Bài tập tính toán
+
+2. Một frame mang payload chỉ 20 byte. Cần thêm bao nhiêu byte padding? Tính tổng kích thước frame (từ Dest MAC tới FCS).
+3. Một frame có EtherType `0x0800` và payload đầy 1500 byte. Đây là protocol tầng trên nào, và tổng kích thước frame (từ Dest MAC tới FCS) là bao nhiêu?
+
+<details>
+  <summary>Đáp án & gợi ý</summary>
+
+1. Preamble (7 B), SFD (1 B), Dest MAC (6 B), Src MAC (6 B), Type/Length (2 B), Payload (46 - 1500 B), FCS (4 B). **Preamble và SFD** (8 B) không tính vào 64 byte tối thiểu vì chúng là phần đồng bộ clock ở Layer 1, đứng trước nội dung frame thực sự.
+2. Payload tối thiểu là 46 byte, nên cần đệm `46 − 20 = 26` byte padding. Tổng frame = `6 + 6 + 2 + 46 + 4 = 64` byte (đúng kích thước tối thiểu).
+3. `0x0800` ⇒ **IPv4**. Tổng frame = `6 + 6 + 2 + 1500 + 4 = 1518` byte (kích thước tối đa của frame Ethernet chuẩn).
+
+</details>
+
+## Nguồn tham khảo
+
+- IEEE Std 802.3-2018, _IEEE Standard for Ethernet_, mục 3 (MAC frame format: Preamble, SFD, address, length/type, FCS).
+- J. F. Kurose & K. W. Ross, _Computer Networking: A Top-Down Approach_, 8th ed., mục 6.4.2 (Ethernet).

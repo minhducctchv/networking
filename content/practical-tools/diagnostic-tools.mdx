@@ -1,0 +1,175 @@
+import { Callout } from "nextra/components";
+
+# Công cụ chẩn đoán
+
+Khi một kết nối "không chạy", bạn cần trả lời các câu hỏi rất cụ thể: máy đích có sống không, gói đi tới đâu thì tắc, tên miền phân giải ra IP nào, máy của tôi đang mở những cổng nào? Bài học này giới thiệu sáu **diagnostic tool** (công cụ chẩn đoán — tiện ích dòng lệnh dùng để kiểm tra và đo đạc trạng thái mạng) nền tảng: **ping**, **traceroute**, **nslookup**, **dig**, **netstat** và **ss**. Mỗi công cụ kèm một ví dụ chạy thật và khối output để bạn tập đọc.
+
+## ping — máy đích có tới được không?
+
+**ping** (công cụ gửi gói ICMP echo request và đo thời gian nhận lại echo reply để kiểm tra khả năng kết nối và độ trễ) là việc đầu tiên hầu hết kỹ sư làm. Nó dựa trên **ICMP** (Internet Control Message Protocol — protocol tầng Network dùng cho thông báo điều khiển và chẩn đoán, đã gặp ở Chương 4). Các bước dùng cơ bản: gọi `ping` với tên miền hoặc IP, dùng cờ `-c` để giới hạn số gói, rồi đọc dòng thống kê cuối.
+
+```bash
+$ ping -c 4 example.com
+PING example.com (93.184.216.34) 56(84) bytes of data.
+64 bytes from 93.184.216.34: icmp_seq=1 ttl=56 time=11.3 ms
+64 bytes from 93.184.216.34: icmp_seq=2 ttl=56 time=10.9 ms
+64 bytes from 93.184.216.34: icmp_seq=3 ttl=56 time=11.1 ms
+64 bytes from 93.184.216.34: icmp_seq=4 ttl=56 time=10.8 ms
+
+--- example.com ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3005ms
+rtt min/avg/max/mdev = 10.812/11.025/11.301/0.187 ms
+```
+
+Hai con số quan trọng nhất nằm ở cuối: **packet loss** (tỉ lệ mất gói — ở đây `0%`, nghĩa là đường truyền ổn định) và **rtt** (round-trip time — thời gian khứ hồi trung bình, ở đây khoảng `11 ms`). Trường `time=` ở mỗi dòng là RTT của riêng gói đó; nếu các giá trị này dao động mạnh thì mạng đang **jitter** (độ trễ biến thiên). Nếu thấy `100% packet loss`, đích không phản hồi — nhưng hãy nhớ nhiều server cố tình chặn ICMP, nên ping thất bại chưa chắc là server chết.
+
+## traceroute — gói tắc ở chặng nào?
+
+**traceroute** (công cụ liệt kê từng router — hop — mà gói đi qua trên đường tới đích, kèm độ trễ tại mỗi chặng) cho thấy *đường đi*, không chỉ điểm cuối. Nó hoạt động bằng mẹo tăng dần **TTL** (Time To Live — bộ đếm số hop tối đa trong header IP; mỗi router giảm nó đi 1): gói TTL=1 hết hạn ở router đầu, TTL=2 ở router thứ hai, và mỗi router hết hạn sẽ gửi về một thông báo ICMP, nhờ đó lộ ra danh tính từng chặng. Cách dùng: gọi `traceroute` với đích, thêm `-n` để khỏi phân giải tên cho nhanh.
+
+```bash
+$ traceroute -n example.com
+traceroute to example.com (93.184.216.34), 30 hops max, 60 byte packets
+ 1  192.168.1.1      1.012 ms   0.998 ms   1.105 ms      # default gateway trong LAN
+ 2  10.0.0.1         8.431 ms   8.502 ms   8.470 ms      # router của ISP
+ 3  72.14.215.85    20.115 ms  20.030 ms  20.210 ms      # đi vào WAN
+ 4  * * *                                                # hop này không trả lời ICMP
+ 5  93.184.216.34   21.350 ms  21.090 ms  21.400 ms      # tới đích
+```
+
+Mỗi dòng là một hop, với ba phép đo độ trễ (traceroute gửi ba gói thăm dò mỗi chặng). Hop 1 là **default gateway** (cổng mặc định — router trong LAN, đã học ở Chương 4); độ trễ tăng dần khi ra xa. Dòng `* * *` ở hop 4 nghĩa là router đó không trả lời thăm dò (nhiều router hạ ưu tiên ICMP) — bản thân điều này thường *không* phải lỗi nếu các hop sau vẫn trả lời. traceroute đặc biệt hữu ích để phân biệt "lỗi ở mạng nội bộ" (tắc ngay hop 1–2) với "lỗi ở phía ISP/Internet" (đi được vài hop rồi dừng hẳn).
+
+<Callout type="info">
+  Trên Windows lệnh tương đương là `tracert`. Một biến thể hữu ích là `mtr`, kết
+  hợp ping và traceroute để liên tục cập nhật tỉ lệ mất gói tại từng hop — rất
+  tốt để bắt lỗi chập chờn.
+</Callout>
+
+## nslookup — phân giải tên nhanh
+
+**nslookup** (công cụ truy vấn DNS đơn giản, có gần như mọi nơi kể cả Windows) dùng để kiểm tra nhanh một tên miền phân giải ra IP nào, và resolver nào đã trả lời. Cách dùng: gọi `nslookup` với tên miền; có thể chỉ định server bằng cách thêm địa chỉ server ở cuối.
+
+```bash
+$ nslookup example.com
+Server:		1.1.1.1
+Address:	1.1.1.1#53
+
+Non-authoritative answer:
+Name:	example.com
+Address: 93.184.216.34
+Name:	example.com
+Address: 2606:2800:220:1:248:1893:25c8:1946
+```
+
+Khối đầu cho biết truy vấn được gửi tới **resolver** `1.1.1.1` ở port `53`. Dòng `Non-authoritative answer` nghĩa là câu trả lời đến từ cache của resolver chứ không trực tiếp từ authoritative server (khái niệm từ Chương 6). Phần `Address` liệt kê cả IPv4 (`93.184.216.34`) lẫn IPv6. Để hỏi một server cụ thể, thêm nó vào cuối, ví dụ `nslookup example.com 8.8.8.8` — cách so sánh kết quả giữa hai resolver để phát hiện cache cũ.
+
+## dig — soi chi tiết câu trả lời DNS
+
+**dig** trả về output chi tiết và có cấu trúc hơn nslookup, nên là lựa chọn ưa thích khi cần đọc kỹ một phản hồi DNS hoặc gỡ lỗi. Ở vai trò chẩn đoán, hai cách dùng đáng nhớ là `+short` (chỉ lấy giá trị) và `@server` (ép hỏi một resolver xác định).
+
+```bash
+$ dig @8.8.8.8 example.com A +short
+93.184.216.34
+```
+
+Lệnh trên hỏi thẳng resolver `8.8.8.8` bản ghi A của `example.com` và chỉ in giá trị — gọn để đưa vào script. Khi cần nhìn đầy đủ, bỏ `+short` để thấy các section:
+
+```bash
+$ dig example.com A
+
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 42337
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; ANSWER SECTION:
+example.com.            3589    IN      A       93.184.216.34
+
+;; Query time: 12 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1) (UDP)
+```
+
+Cờ `status: NOERROR` báo truy vấn thành công; nếu thấy `status: NXDOMAIN` nghĩa là tên miền không tồn tại — một manh mối chẩn đoán rất rõ. Trường TTL `3589` (nhỏ hơn giá trị gốc) cho thấy câu trả lời đang đến từ cache. So sánh: **nslookup** thích hợp để hỏi nhanh "ra IP nào?", còn **dig** thích hợp khi cần đọc cờ, TTL và từng section để hiểu *vì sao*.
+
+## netstat — máy đang mở những kết nối/cổng nào?
+
+**netstat** (network statistics — công cụ liệt kê các socket, kết nối và cổng đang lắng nghe trên máy cục bộ) chuyển hướng chẩn đoán từ mạng bên ngoài vào chính máy bạn. Cách dùng phổ biến là tổ hợp cờ `-tuln`: `t` cho TCP, `u` cho UDP, `l` chỉ các socket đang **listen**, `n` hiện số thay vì tên.
+
+```bash
+$ netstat -tuln
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:5432          0.0.0.0:*               LISTEN
+tcp6       0      0 :::80                   :::*                    LISTEN
+udp        0      0 0.0.0.0:68              0.0.0.0:*
+```
+
+Cột `Local Address` cho biết dịch vụ lắng nghe ở đâu. `0.0.0.0:22` nghĩa là SSH (port 22) nhận kết nối trên *mọi* địa chỉ; `127.0.0.1:5432` nghĩa là PostgreSQL chỉ nghe ở **loopback** (địa chỉ nội bộ máy — chỉ tiến trình trên cùng máy mới nối được), nên một client từ ngoài sẽ không kết nối được — đây là loại bằng chứng cực kỳ hữu ích khi gỡ lỗi "không kết nối được dịch vụ". Trạng thái `LISTEN` xác nhận dịch vụ đã sẵn sàng nhận kết nối.
+
+## ss — phiên bản hiện đại, nhanh hơn của netstat
+
+**ss** (socket statistics — công cụ thay thế netstat trên Linux hiện đại, nhanh hơn vì đọc trực tiếp từ kernel) dùng bộ cờ gần như giống hệt netstat, nên `ss -tuln` cho thông tin tương đương:
+
+```bash
+$ ss -tuln
+Netid State  Recv-Q Send-Q Local Address:Port  Peer Address:Port
+tcp   LISTEN 0      128          0.0.0.0:22         0.0.0.0:*
+tcp   LISTEN 0      128        127.0.0.1:5432       0.0.0.0:*
+tcp   LISTEN 0      511             [::]:80            [::]:*
+udp   UNCONN 0      0            0.0.0.0:68         0.0.0.0:*
+```
+
+Sức mạnh của ss là lọc theo trạng thái và hiện tiến trình sở hữu socket. Lệnh dưới chỉ liệt kê các kết nối TCP đang `established`, kèm tên process (`-p`):
+
+```bash
+$ ss -tnp state established
+Recv-Q Send-Q   Local Address:Port      Peer Address:Port    Process
+0      0        192.168.1.10:51514      93.184.216.34:443    users:(("firefox",pid=2841,fd=78))
+```
+
+Output này gắn một kết nối cụ thể với *tiến trình* tạo ra nó: Firefox (`pid=2841`) đang giữ một kết nối HTTPS tới `93.184.216.34:443`. Khả năng truy ra "process nào đang mở cổng/kết nối nào" là điều khiến ss vượt trội khi truy lùng một dịch vụ chiếm cổng ngoài ý muốn.
+
+<Callout type="warning">
+  netstat bị xem là lỗi thời trên nhiều bản Linux và có thể không cài sẵn; hãy
+  ưu tiên `ss`. Bộ cờ gần như giống nhau nên kỹ năng chuyển qua lại rất dễ.
+</Callout>
+
+## Tóm tắt nhanh
+
+- **ping** kiểm tra đích có sống không, đo **RTT** và **packet loss** bằng ICMP.
+- **traceroute** lộ ra từng **hop** tới đích bằng mẹo tăng dần TTL; `* * *` chỉ là hop không trả lời, chưa chắc là lỗi.
+- **nslookup** hỏi DNS nhanh "ra IP nào"; **dig** cho output chi tiết (cờ, TTL, section) để hiểu *vì sao* — chú ý `status: NXDOMAIN`.
+- **netstat** và **ss** liệt kê socket/cổng trên máy cục bộ; `-tuln` xem cổng đang `LISTEN`. **ss** nhanh hơn và hiện được tiến trình sở hữu (`-p`).
+- Mẫu hình chẩn đoán: ping/traceroute soi *mạng bên ngoài*, netstat/ss soi *chính máy bạn*, nslookup/dig soi *phân giải tên*.
+
+## Bài tập
+
+### Câu hỏi lý thuyết
+
+1. Giải thích vì sao traceroute có thể liệt kê từng router trên đường đi, dựa trên cơ chế **TTL** và thông báo ICMP. Một dòng `* * *` ở giữa lộ trình có nhất thiết là lỗi không? Vì sao?
+2. Output `netstat -tuln` cho thấy một dịch vụ lắng nghe ở `127.0.0.1:5432`. Vì sao một client từ máy khác trong LAN không thể kết nối tới dịch vụ này, dù máy chủ vẫn bật?
+
+### Bài tập áp dụng
+
+3. Bạn chạy `ping -c 4 example.com` và nhận `0% packet loss` với `rtt avg = 11 ms`, nhưng trang web vẫn không mở được trong trình duyệt. Dựa trên những gì ping kiểm tra, hãy lập luận lỗi *không* nằm ở đâu, và đề xuất hai công cụ khác để điều tra tiếp.
+
+### Thực hành (chạy công cụ thật)
+
+4. Trên máy của bạn, chạy `dig example.com A` rồi `dig @8.8.8.8 example.com A`. So sánh trường TTL và dòng `SERVER:` ở hai output, và giải thích vì sao giá trị TTL có thể khác nhau.
+5. Chạy `ss -tuln` (hoặc `netstat -tuln`) trên máy của bạn và liệt kê các cổng đang ở trạng thái `LISTEN`. Chọn một cổng và cho biết dịch vụ nào đang nghe; nếu dùng `ss -tnp`, tiến trình nào sở hữu nó?
+
+<details>
+  <summary>Đáp án & gợi ý</summary>
+
+1. Mỗi router giảm **TTL** đi 1; khi TTL về 0, router đó *bỏ gói* và gửi lại một thông báo ICMP "Time Exceeded" kèm địa chỉ của chính nó. traceroute gửi loạt gói với TTL = 1, 2, 3… nên lần lượt "ép" từng router lộ danh tính. Dòng `* * *` **không nhất thiết là lỗi**: nhiều router cố tình không trả lời thăm dò (hạ ưu tiên ICMP); nếu các hop *sau* đó vẫn trả lời và gói tới được đích thì lộ trình vẫn thông.
+2. Vì `127.0.0.1` là địa chỉ **loopback**, chỉ truy cập được từ *chính máy đó*. Dịch vụ chỉ bind vào loopback nên kernel không nhận kết nối tới nó qua card mạng thật. Muốn client ngoài nối được, dịch vụ phải lắng nghe trên `0.0.0.0` (mọi địa chỉ) hoặc trên IP LAN cụ thể.
+3. ping thành công chứng tỏ tầng Network tới đích **thông** (định tuyến IP và đích phản hồi ICMP đều ổn), nên lỗi *không* nằm ở kết nối IP cơ bản hay routing tới server. Lỗi nhiều khả năng ở tầng cao hơn: dịch vụ web/port 80–443, TLS, hoặc DNS (nếu trình duyệt phân giải ra IP khác). Hai công cụ tiếp theo: `dig`/`nslookup` để kiểm tra tên miền ra đúng IP không, và `curl -v` hoặc `tcpdump`/`tshark` để xem kết nối tới port 443 và handshake.
+4. Cả hai lệnh nên trả về cùng địa chỉ, nhưng dòng `SERVER:` khác nhau (`1.1.1.1` so với `8.8.8.8`) vì bạn hỏi hai resolver khác nhau. TTL có thể khác vì mỗi resolver cache độc lập: con số là *thời gian còn lại* trong cache resolver đó, phụ thuộc lần cuối nó làm mới bản ghi — nên resolver vừa cache xong sẽ có TTL cao hơn.
+5. Đáp án tùy máy. Cách đọc: mỗi dòng `LISTEN` có `Local Address:Port`; ví dụ `0.0.0.0:22` là SSH. Với `ss -tnp`, cột `Process` cho biết tiến trình, ví dụ `users:(("sshd",pid=...))`. Cổng nghe trên `0.0.0.0` nhận từ mọi nơi, còn trên `127.0.0.1` chỉ nhận nội bộ.
+
+</details>
+
+## Nguồn tham khảo
+
+- `ping(8)`, `traceroute(8)` and `ss(8)` Linux man pages (iputils and iproute2 projects) — invocation flags and output fields.
+- `dig(1)` man page, ISC BIND 9 documentation (query options such as `+short` and `@server`).
+- J. F. Kurose & K. W. Ross, _Computer Networking: A Top-Down Approach_, 8th ed., section 5.6 (ICMP, the basis of ping and traceroute).

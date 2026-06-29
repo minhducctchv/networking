@@ -1,0 +1,46 @@
+# Tóm tắt Chương 6: Application Layer
+
+Chương này đã đi qua các protocol mà lập trình viên dùng trực tiếp ở tầng trên cùng của ngăn xếp: phân giải tên với DNS, trao đổi web an toàn với HTTP/HTTPS, và bộ ba SMTP/FTP/SSH cho email, truyền file và truy cập từ xa. Dưới đây là các khái niệm chính theo từng bài, sau đó là bài tập ôn tập kết hợp nhiều bài.
+
+## Các khái niệm chính
+
+### DNS
+
+- **DNS** biến domain name thành địa chỉ IP, chạy trên **port 53** (UDP mặc định, TCP khi phản hồi lớn hoặc truyền zone).
+- Không gian tên phân cấp **root → TLD → authoritative**; chỉ chặng stub đến recursive resolver là **recursive query**, còn resolver đi hỏi root/TLD/authoritative là **iterative query**.
+- **TTL** quyết định thời gian cache; bốn record cốt lõi là **A** (IPv4), **AAAA** (IPv6), **CNAME** (alias), **MX** (mail server + priority).
+
+### HTTP & HTTPS
+
+- HTTP là protocol **request/response**, **stateless**, chạy trên TCP **port 80**; HTTPS chạy trên **port 443**.
+- Request gồm **method + path + version**, **header**, **body**; response gồm **status line**, **header**, **body**. Năm nhóm status code: **1xx, 2xx, 3xx, 4xx, 5xx**.
+- **HTTPS = HTTP + TLS**: TLS handshake dùng **certificate** (do **CA** ký) và mã hóa bất đối xứng để thỏa thuận **session key** đối xứng, đem lại confidentiality, integrity và authentication.
+
+### SMTP, FTP & SSH
+
+- **SMTP** gửi/chuyển email: **port 25** cho relay giữa MTA, **port 587** cho submission có xác thực.
+- **FTP** truyền file qua hai kênh — **control port 21** và **data port 20**; nên thay bằng SFTP/FTPS vì FTP thuần là plaintext.
+- **SSH** (**port 22**) tạo kênh mã hóa cho shell từ xa, truyền file (SCP/SFTP) và port forwarding.
+
+## Bài tập ôn tập
+
+1. **(Lý thuyết — kết hợp "DNS" + "HTTP & HTTPS")** Khi bạn gõ `https://shop.example.com` vào trình duyệt và nhấn Enter, hãy mô tả theo thứ tự: (a) DNS làm gì để có địa chỉ IP, phân biệt recursive và iterative query; (b) sau khi có IP, trình duyệt kết nối tới port nào và TLS handshake dùng certificate ra sao; (c) request đầu tiên có dạng status line/method gì và một response thành công trả về status code nào.
+
+2. **(Tình huống — kết hợp "DNS" + "SMTP, FTP & SSH")** Một ứng dụng cần gửi email tới `bob@example.com`. Giải thích vì sao mail server phải tra **record MX** của `example.com` (khái niệm từ bài DNS) trước khi mở kết nối **SMTP**, và sau khi có hostname của mail server thì nó kết nối tới port nào để relay thư.
+
+3. **(Tình huống thực tế — kết hợp "HTTP & HTTPS" + "SMTP, FTP & SSH")** Bạn chuẩn bị triển khai một website: cần (a) đẩy file build lên server, (b) đăng nhập server xem log, và (c) phục vụ trang qua kết nối an toàn cho người dùng. Với mỗi việc, chọn protocol và port phù hợp, và chỉ ra điểm chung về bảo mật giữa lựa chọn (a)/(b) với HTTPS ở (c).
+
+4. **(Tính toán/suy luận — kết hợp "DNS" + "HTTP & HTTPS")** Một bản ghi A có **TTL** `300` giây, và response HTTP của trang có header `Cache-Control: max-age=600`. Người dùng tải lại trang sau `200` giây. Hỏi: (a) trình duyệt có cần truy vấn DNS lại không, vì sao; (b) trình duyệt có thể dùng lại nội dung trang từ cache không, và mã `304 Not Modified` liên quan thế nào tới tình huống này.
+
+<details>
+  <summary>Đáp án</summary>
+
+1. (a) Stub resolver gửi **recursive query** tới recursive resolver; resolver thực hiện các **iterative query** xuống root → TLD `.com` → authoritative của `example.com` để lấy bản ghi **A/AAAA** cho `shop.example.com`. (b) Có IP rồi, trình duyệt mở TCP tới **port 443** và chạy **TLS handshake**: server gửi **certificate** (do **CA** ký) để xác thực, hai bên thỏa thuận **session key** đối xứng. (c) Request đầu là `GET / HTTP/1.1` kèm header `Host`; response thành công trả về **`200 OK`** (thuộc nhóm 2xx).
+
+2. Vì **MX record** cho biết hostname của mail server chịu trách nhiệm nhận thư cho domain `example.com`; nếu không tra MX, máy gửi không biết phải đẩy thư tới đâu. Sau khi phân giải MX ra hostname rồi tra tiếp **A/AAAA** để có IP, máy gửi mở kết nối **SMTP** tới **port 25** (relay giữa các MTA) để chuyển thư.
+
+3. (a) **SSH/SCP** qua **port 22** để đẩy file. (b) **SSH** qua **port 22** để đăng nhập xem log. (c) **HTTPS** qua **port 443** để phục vụ trang. Điểm chung về bảo mật: cả SSH (a/b) và HTTPS/TLS (c) đều **mã hóa dữ liệu trên đường truyền và xác thực phía server**, nên thông tin đăng nhập và nội dung không bị lộ — khác hẳn FTP/HTTP thuần vốn truyền plaintext.
+
+4. (a) **Không** cần truy vấn DNS lại: bản ghi A có TTL `300` giây mà mới qua `200` giây, nên kết quả vẫn còn hợp lệ trong cache của resolver/hệ điều hành. (b) **Có thể** dùng lại nội dung trang vì `max-age=600` cho phép cache `600` giây, mới qua `200` giây nên còn "tươi". Khi cache hết hạn, thay vì tải lại toàn bộ, trình duyệt có thể gửi request kiểm tra điều kiện; nếu nội dung không đổi, server trả **`304 Not Modified`** để trình duyệt tái sử dụng bản cũ, tiết kiệm băng thông.
+
+</details>
