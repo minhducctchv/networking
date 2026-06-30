@@ -1,0 +1,397 @@
+# Đóng gói & tháo gói dữ liệu
+
+Easy English Podcast — How Data Travels on a Network
+[Soft intro music]
+
+Hello, friends. Welcome to our podcast.
+
+Today, we learn one new topic. It is about computers. It is about networks. Do not worry. I will speak slowly. I will use easy words.
+
+Are you ready? Let's start.
+
+Part 1 — A Letter Story
+
+First, think about a letter.
+
+You write a letter for your friend. What do you do next? You put the letter in an envelope. You write the address on the envelope. Then you send it.
+
+Data on a computer is like a letter. The computer puts the data in an envelope too. We call this envelope a "header." A header has information. It says: "Send this to here." It says: "This comes from there."
+
+So please remember this word: header. A header is a small note on the data.
+
+Part 2 — Many Layers, Many Envelopes
+
+Now, here is one interesting thing. Data does not have one envelope. Data has many envelopes. Yes, many!
+
+A network has five layers. A layer is like a step. Each layer adds one envelope. Each layer adds one header.
+
+The five layers are:
+
+Application
+Transport
+Network
+Data Link
+Physical
+Five layers. Five steps. Let's go through them.
+
+Part 3 — Going Down (Sending Data)
+
+When you send data, the data goes down. Down through the five layers.
+
+Layer one: Application. This is your app. For example, your web browser, or your chat app. Here, we call the data just "Data."
+
+Layer two: Transport. This layer adds a header. The header has a port number. A port number is like a room number in a big house. Now we call the data a "Segment."
+
+Layer three: Network. This layer adds another header. The header has an IP address. An IP address is the address of the computer. Now we call the data a "Packet."
+
+Layer four: Data Link. This layer adds a header. And it also adds a small note at the end. We call this small note a "trailer." Now we call the data a "Frame."
+
+Layer five: Physical. Here, the frame becomes only zeros and ones. We call them "Bits." The bits travel on the wire, or in the air.
+
+So, five layers. Five names: Data, Segment, Packet, Frame, Bits.
+
+Part 4 — Easy Way to Remember
+
+Let me say the names one more time. Listen and repeat.
+
+Data
+Segment
+Packet
+Frame
+Bits
+One more time, slowly:
+
+Data… Segment… Packet… Frame… Bits.
+Here is a fun trick. A short sentence: "Do Sergeants Pay For Beer?"
+
+D for Data
+S for Segment
+P for Packet
+F for Frame
+B for Bits
+This is a popular question in job interviews. So please remember it well.
+
+Part 5 — Going Up (Receiving Data)
+
+Now, the bits arrive at the other computer. What happens? The opposite!
+
+The data goes up. Up through the five layers.
+
+The Physical layer takes the bits. It makes a frame.
+The Data Link layer reads the MAC address. It checks for errors. It removes the header and the trailer. Now we have a packet.
+The Network layer reads the IP address. It removes the header. Now we have a segment.
+The Transport layer reads the port number. It removes the header. Now we have the data.
+The Application gets the data. Your browser can show the web page.
+So, sending is "down." Receiving is "up." Easy, right?
+
+Part 6 — A Simple Example with Numbers
+
+Let's do a small example. Just one minute. I will use easy numbers.
+
+Imagine your app sends 100 bytes of data.
+
+Start: 100 bytes. This is Data.
+Add a TCP header. The TCP header is 20 bytes. Now we have 120 bytes. This is a Segment.
+Add an IP header. The IP header is 20 bytes. Now we have 140 bytes. This is a Packet.
+Add an Ethernet header (14 bytes) and a trailer (4 bytes). Now we have 158 bytes. This is a Frame.
+So, 100 bytes of data becomes 158 bytes on the wire. The extra bytes are the "cost." But the cost is okay. The headers help the data find the right place.
+
+Part 7 — One Big Idea
+
+Here is one big idea. Please listen.
+
+A layer does not need to understand other layers. A layer only reads its own header. That's all.
+
+For example, the Network layer does not read the TCP segment. It only reads the IP header. The TCP part is just "stuff" for it. This is a key idea. It keeps the layers simple and clean.
+
+Part 8 — Quick Summary
+
+Okay, friends. Let's review.
+
+Encapsulation means "wrap up." Each layer adds a header. The data goes down.
+De-encapsulation means "unwrap." Each layer removes a header. The data goes up.
+The names of the data change: Data, Segment, Packet, Frame, Bits.
+A layer reads only its own header. Not other headers.
+[Outro music]
+
+That is all for today, friends. Thank you for listening.
+
+Please practice these new words:
+
+Header
+Payload
+Encapsulation
+Segment, Packet, Frame, Bits
+Listen to this podcast again. Repeat the words after me. Speak out loud. This is good practice.
+
+See you in the next episode. Bye-bye!
+
+# Chuyển mạch & Topology
+
+Podcast: Networks Made Simple — Episode 1: Switching and Topologies
+
+[Intro music fades in, then fades out]
+
+Hello, everyone! Welcome to "Networks Made Simple." I am your host. Today is a great day to learn English and learn about computer networks at the same time.
+
+In this episode, we will learn three things. First, we will talk about switching. Second, we will talk about network shapes. Third, we will talk about network sizes. Are you ready? Let's start!
+
+Part One: Switching
+
+What is switching? Switching is the way data moves in a network. There are two kinds of switching.
+
+The first kind is circuit switching. In circuit switching, we make one special path. Only two people use this path. It is like an old telephone call. When you call your friend, you have one line. No other person uses your line. This is good. The call is clear and stable. But there is a problem. When you don't talk, the line is still busy. We waste the line.
+
+The second kind is packet switching. This is how the Internet works. In packet switching, we cut data into small pieces. We call these pieces "packets." Each packet finds its own way. Many people share the same roads. This is good. We use the roads well. But sometimes packets are fast, and sometimes they are slow.
+
+Let me give you a simple picture. Circuit switching is like a private taxi. Only you sit in the taxi. Packet switching is like a city bus. Many people sit together. The bus is cheap, but the time is not always the same.
+
+Part Two: Network Shapes
+
+Now, let's talk about network shapes. We call these shapes "topologies." A topology shows how computers connect to each other. There are four basic shapes.
+
+Shape number one is bus. All computers connect to one long cable. It is simple. It is cheap. But it has one big problem. If the cable breaks, the whole network stops. Old networks used this shape.
+
+Shape number two is star. All computers connect to one center device. The center is often a switch. This shape is easy to manage. If one computer breaks, the other computers are okay. But if the center breaks, the whole network stops. Most offices today use this shape.
+
+Shape number three is ring. The computers connect in a circle. Data moves in one direction, around and around. The speed is stable. But if one computer breaks, the ring is broken too. Some old networks used this shape.
+
+Shape number four is mesh. Many computers connect to many other computers. There are many paths. If one path is broken, data can take a new path. This is very safe. But it uses a lot of cables. Big Internet companies use this shape in their main networks.
+
+Part Three: Network Sizes
+
+Okay, now let's talk about size. Networks come in different sizes. We have three main types.
+
+The first one is LAN. LAN means Local Area Network. It is small. It is inside one building or one office. For example, the network in your office is a LAN.
+
+The second one is MAN. MAN means Metropolitan Area Network. It is bigger. It covers one city. For example, a big school with many buildings in one city can use a MAN.
+
+The third one is WAN. WAN means Wide Area Network. It is very big. It can cover many cities or many countries. The Internet is a WAN. If a company has one office in Hanoi and one office in Ho Chi Minh City, the company needs a WAN.
+
+Please remember this simple rule. LAN is in a building. MAN is in a city. WAN is in a country, or in the whole world.
+
+Part Four: A Real Story
+
+Let's put everything together with a small story.
+
+Imagine you are at work. You open your laptop. You want to visit a website. The website is in another country. What happens?
+
+First, your laptop cuts the data into packets. This is packet switching.
+
+Next, the packets go to a switch in your office. Your office uses the star shape.
+
+Then, the packets go to a router. The router sends the packets to the Internet. The Internet is a WAN.
+
+Inside the Internet, there are many big companies. We call them ISPs. They connect with the mesh shape. So if one path has a problem, the packets find a new path. They don't stop.
+
+Finally, the packets arrive at the website. The website sends data back to you. And you see the page on your screen.
+
+All of this happens in one or two seconds. Amazing, right?
+
+Summary
+
+Let's review today's lesson.
+
+Number one. We have two kinds of switching. Circuit switching uses a private path. Packet switching uses a shared path with small packets.
+
+Number two. We have four basic network shapes. Bus, star, ring, and mesh. Each shape has good points and bad points.
+
+Number three. We have three network sizes. LAN is small. MAN is medium. WAN is big.
+
+That's all for today. Thank you for listening to "Networks Made Simple." Please listen to this episode again. Try to repeat the new words. Slow listening is good for learning.
+
+See you in the next episode. Goodbye, and have a nice day!
+
+[Outro music fades in]
+
+# Mô hình TCP/IP 4 tầng
+
+Podcast: The TCP/IP Model — Easy English for Beginners
+
+Hello, friends. Welcome to the show. Today, we talk about the TCP/IP model. It is a big name. But do not worry. I will use easy words. Are you ready? Let's start.
+
+Part 1: What is TCP/IP?
+
+TCP/IP is a model. A model is like a plan. It shows how the internet works. The internet is very big. Many computers talk to each other. TCP/IP helps them talk.
+
+There is another model. It is called OSI. OSI has seven layers. But TCP/IP has only four layers. Four is smaller than seven. TCP/IP is more simple. People use TCP/IP every day.
+
+Part 2: The Four Layers
+
+TCP/IP has four layers. Let me say them again. Four layers. From top to bottom:
+
+One. Application. Two. Transport. Three. Internet. Four. Network Access.
+
+Now, what does each layer do? Let's see.
+
+The Application layer is for apps. For example, your web browser. Or your email. Common names here are HTTP, DNS, and SMTP. HTTP is for web pages. DNS finds the name of a website.
+
+The Transport layer moves data. It moves data from one program to another program. Two common names here: TCP and UDP. TCP is safe and slow. UDP is fast but not safe.
+
+The Internet layer finds the way. It is like a map. It uses IP addresses. An IP address is a number for a computer. The main name here is IP.
+
+The Network Access layer is the last one. It sends signals. Signals go on cables or Wi-Fi. Ethernet and Wi-Fi are common here.
+
+So, four layers. Application, Transport, Internet, Network Access. Easy, right?
+
+Part 3: TCP/IP and OSI
+
+Now, let's compare. OSI has seven layers. TCP/IP has four. How do they match?
+
+The Application layer in TCP/IP is big. It is like three OSI layers in one. It covers layer five, layer six, and layer seven of OSI.
+
+The Transport layer is the same in both models. It matches layer four of OSI.
+
+The Internet layer also matches one OSI layer. It is layer three.
+
+The Network Access layer covers two OSI layers. Layer one and layer two.
+
+So, TCP/IP puts some layers together. It makes things more simple.
+
+Part 4: Why Put Layers Together?
+
+Good question. Why does TCP/IP put layers together?
+
+The reason is easy. In real life, some jobs go together. For example, HTTP. HTTP is one protocol. But it does many things. It manages the session. It shows the data. It runs the app. All in one. So we do not need three layers. One layer is enough.
+
+It is the same for Network Access. Ethernet sends signals. Ethernet also makes frames. It does both jobs. So one layer is enough.
+
+There is a special idea. It is called the "narrow waist". The waist is the middle part. In TCP/IP, the middle is the Internet layer. And the main protocol is IP. Only IP. Above IP, we have many apps. Below IP, we have many cables and Wi-Fi. But in the middle, only IP. IP connects everything.
+
+Part 5: A Real Example
+
+Let's see a real example. You open your browser. You go to a website. For example, example dot com.
+
+What happens? Let me tell you. Step by step.
+
+First, Application layer. DNS asks: "What is the IP address of example dot com?" Then, HTTP says: "Please send me the page."
+
+Second, Transport layer. TCP opens a connection. It uses port four-four-three. It cuts the data into small parts.
+
+Third, Internet layer. IP finds the way. It sends data to the right computer.
+
+Fourth, Network Access layer. Ethernet or Wi-Fi sends the signal. The signal goes on a cable or in the air.
+
+All four layers work together. Very fast. In one second, you see the page.
+
+Part 6: Quick Summary
+
+Okay, time to review. Let's remember the main points.
+
+One. TCP/IP has four layers. Application, Transport, Internet, Network Access.
+
+Two. TCP/IP is like OSI, but more simple.
+
+Three. Application covers three OSI layers. Network Access covers two. Transport and Internet match one to one.
+
+Four. IP is in the middle. IP is the "narrow waist". IP connects all things.
+
+Part 7: Goodbye
+
+That is all for today. Good job, friend. You learned about TCP/IP. Now you know the four layers. You also know why we use them.
+
+Listen again if you want. Repeat the names. Application, Transport, Internet, Network Access. Say them with me. Application. Transport. Internet. Network Access.
+
+Thank you for listening. See you next time. Bye-bye.
+
+# Tóm tắt Chương 1: Nền tảng mạng máy tính
+
+Podcast: Computer Networks for Beginners — Episode 1: The Basics
+
+[INTRO MUSIC FADES IN]
+
+Hello, friends! Welcome to the show. My name is your host. Today is episode one. We will talk about computer networks. Are you ready? Let's start!
+
+[SEGMENT 1: What is a Computer Network?]
+
+First, a question. What is a computer network?
+
+A computer network is a group of devices. The devices connect to each other. They send data. They share information.
+
+For example, look at your phone. Look at your computer. They can talk to each other. That is a small network.
+
+A network needs three things.
+
+One: end systems. End systems are devices. A phone is an end system. A laptop is an end system.
+
+Two: a medium. A medium is the path for data. It can be a wire. It can be a wireless signal, like Wi-Fi.
+
+Three: middle devices. Middle devices help to move data. A router is a middle device.
+
+We also need a protocol. A protocol is a set of rules. Rules help devices to understand each other.
+
+A protocol has three parts. Syntax is the form of the message. Semantics is the meaning. Timing is the order.
+
+Easy, right? Let's go to the next part.
+
+[SEGMENT 2: The OSI Model]
+
+Now, we talk about the OSI model. OSI has seven layers. Seven, not four. Listen carefully.
+
+From the bottom to the top:
+
+Layer one is Physical. Layer two is Data Link. Layer three is Network. Layer four is Transport. Layer five is Session. Layer six is Presentation. Layer seven is Application.
+
+The low layers are close to the hardware, like cables. The high layers are close to the user, like your web browser. Each layer has one job. Each layer has its own protocols.
+
+[SEGMENT 3: The TCP/IP Model]
+
+Next, the TCP/IP model. This model has only four layers. It is more simple.
+
+Layer one is Network Access. Layer two is Internet. Layer three is Transport. Layer four is Application.
+
+Now, let's compare. The Application layer in TCP/IP is the same as layers five, six, and seven in OSI. The Network Access layer in TCP/IP is the same as layers one and two in OSI. The other layers are the same.
+
+Why is TCP/IP shorter? Because some jobs go together in real life. So we put them in one layer.
+
+Engineers call IP the "narrow waist." Why? Because IP is in the middle. Many protocols use IP. IP is the heart of the Internet.
+
+[SEGMENT 4: Encapsulation]
+
+Now, a new word: encapsulation. It is a long word, but the idea is easy.
+
+When data goes down the layers, each layer adds a header. A header is some extra information. We call this process encapsulation.
+
+When data goes up the layers, each layer removes its header. We call this de-encapsulation.
+
+The data has different names at different layers. Listen and repeat:
+
+At the top, we say Data. At the Transport layer, we say Segment. At the Network layer, we say Packet. At the Data Link layer, we say Frame. At the Physical layer, we say Bits.
+
+So, the order is: Data, Segment, Packet, Frame, Bits. Say it again. Data, Segment, Packet, Frame, Bits.
+
+One important rule: each layer only reads its own header. It does not look inside.
+
+[SEGMENT 5: Switching and Topology]
+
+Last topic. Switching and topology.
+
+There are two types of switching.
+
+Circuit switching keeps one path for you. The path is private. Old phones used this.
+
+Packet switching shares the path with many users. The Internet uses packet switching. It is more efficient.
+
+A topology is the shape of a network. There are four common types.
+
+Bus: all devices share one line. Star: all devices connect to one center. Ring: devices form a circle. Mesh: every device connects to every other device.
+
+Networks also have different sizes.
+
+A LAN is small. A LAN is in your home or office. A MAN is bigger. A MAN is in a city. A WAN is the biggest. The Internet is a WAN.
+
+Remember: LAN is small, MAN is medium, WAN is wide.
+
+[OUTRO]
+
+OK, friends. We are at the end of episode one.
+
+Today, we learned five things. One: what is a network. Two: the OSI model. Three: the TCP/IP model. Four: encapsulation. Five: switching and topology.
+
+Good job! You did very well.
+
+Now, your homework. Listen to this episode again. Write the new words in your notebook. Say the words out loud.
+
+Thank you for listening. See you in episode two. Bye-bye!
+
+[OUTRO MUSIC FADES OUT]
