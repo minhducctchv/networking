@@ -1,0 +1,85 @@
+Hello, and welcome to the show. Today we talk about the TCP/IP model. It has four layers. This model runs the internet. Let's learn it step by step. Are you ready? Let's go.
+
+What Is TCP/IP?
+TCP/IP is a set of rules. These rules help computers talk to each other. It is the real model of the internet. There is another model too. It is called OSI. OSI has seven layers. But OSI is more of a theory. TCP/IP is real. People use it every day.
+
+TCP/IP has four layers. OSI has seven layers. So TCP/IP is smaller. It puts some layers together. Don't worry. I will explain this slowly.
+
+The Four Layers.
+Let's look at the four layers. We start from the top and go down.
+
+The first layer is Application. This layer is for your apps. For example, a web browser or an email app. Some protocols here are HTTP, DNS, SMTP, FTP, and SSH.
+
+The second layer is Transport. This layer moves data between two programs. It uses TCP and UDP.
+
+The third layer is Internet. This layer finds the right path. It sends data across many networks. It uses IP, ICMP, and ARP.
+
+The fourth layer is Network Access. Some people call it the Link layer. This layer sends data on one physical link. It uses Ethernet and Wi-Fi.
+
+So again: Application, Transport, Internet, Network Access. Four layers. Easy, right?
+
+How TCP/IP Maps to OSI.
+Now let's compare the two models. Each TCP/IP layer matches one or more OSI layers.
+
+The Application layer in TCP/IP is like three OSI layers. They are Layer 5, Layer 6, and Layer 7. So it joins Session, Presentation, and Application together.
+
+The Transport layer in TCP/IP is like Layer 4 in OSI. It is a one-to-one match.
+
+The Internet layer in TCP/IP is like Layer 3 in OSI. This is also a one-to-one match.
+
+The Network Access layer in TCP/IP is like Layer 1 and Layer 2 in OSI. So it joins Physical and Data Link together.
+
+Here is a nice fact. The two middle layers match OSI one-to-one. These layers hold two famous protocols. One is TCP. One is IP. And these two names make the name TCP/IP.
+
+Why Does TCP/IP Join Layers?
+Good question. Why does TCP/IP put layers together?
+
+Let's think about the Application layer. It joins Layer 5, 6, and 7. In real life, these three jobs are hard to split. Take HTTP as an example. HTTP manages the session by itself. It uses cookies and a header called Connection. HTTP also handles data format by itself. It uses Content-Type and it can zip data with gzip. So we do not need three layers. One layer is enough. It is simpler this way.
+
+Now let's think about the Network Access layer. It joins Layer 1 and Layer 2. Sending bits and making frames always go together. They live in one technology, like Ethernet or Wi-Fi. Ethernet already covers both parts. So we join them. It matches the real hardware.
+
+There is a nice idea here. People call it the "narrow waist." The Internet layer has one main protocol. It is IP. Above IP, there are many app protocols. Below IP, there are many link technologies. But IP is in the middle. IP is the meeting point. It helps everything work together.
+
+A Real Example.
+Let's see a real example. You open a website. The address is https://example.com. What happens? Each layer does its job.
+
+First, the Application layer works. DNS asks for the IP address of example.com. Then HTTP sends a request. It says "GET."
+
+Next, the Transport layer works. TCP opens a connection to port 443. It cuts the data into small pieces. We call them segments.
+
+Then, the Internet layer works. IP finds the path. It sends the packet to the server's IP address.
+
+Last, the Network Access layer works. Ethernet or Wi-Fi makes a frame. Then it sends the signal.
+
+You can see this with tools. The command dig example.com shows the Application layer. It shows DNS at work. The command traceroute example.com shows the Internet layer. It shows the IP hops on the way.
+
+Quick Summary.
+Let's review. Here are the key points.
+
+TCP/IP has four layers. They are Application, Transport, Internet, and Network Access.
+
+The map to OSI is simple. Application is Layer 5 to 7. Transport is Layer 4. Internet is Layer 3. Network Access is Layer 1 and 2.
+
+TCP/IP joins layers because the jobs go together in real life. HTTP handles session and format by itself. Ethernet handles bits and frames by itself.
+
+And remember the "narrow waist." IP is the meeting point for everything.
+
+Practice Questions.
+Let's practice. I will ask some questions. You can pause and think.
+
+Question one. Can you name the four TCP/IP layers? And can you match each one to the OSI layers?
+
+Question two. Why does the Application layer join three OSI layers? Can you give one protocol as an example?
+
+Question three. Here are four protocols: ARP, TCP, HTTP, and IP. Which TCP/IP layer does each one use?
+
+Now, here are the answers.
+
+For question one: Application is Layer 7, 6, and 5. Transport is Layer 4. Internet is Layer 3. Network Access is Layer 2 and 1.
+
+For question two: Session, presentation, and application are hard to split. HTTP does these jobs by itself. It uses cookies and the Connection header for sessions. It uses Content-Type and gzip for data format. So we do not need three layers.
+
+For question three: ARP is in Network Access. TCP is in Transport. HTTP is in Application. IP is in Internet.
+
+Goodbye.
+That is all for today. Now you know the TCP/IP model. You know the four layers. You know how they map to OSI. And you know why TCP/IP joins some layers. Great job. Thank you for listening. See you next time. Bye bye.
