@@ -1,16 +1,22 @@
-import { Cards } from "nextra/components";
+import { Cards, Callout } from "nextra/components";
 
 # Chương 2: Physical Layer
 
-Chương này đi xuống tầng thấp nhất của ngăn xếp mạng — **Physical Layer** (tầng vật lý — tầng L1 trong mô hình OSI, nơi từng bit được biến thành tín hiệu vật lý và truyền qua một môi trường). Sau khi Chương 1 cho bạn bộ khung 7 tầng, chương này trả lời câu hỏi cụ thể: một bit `0` hay `1` thực sự "bay" qua dây đồng, sợi quang hay sóng vô tuyến bằng cách nào, và những yếu tố vật lý nào quyết định một liên kết nhanh hay chậm, xa hay gần, rẻ hay đắt.
+Chương này đi xuống tầng thấp nhất của ngăn xếp mạng — **Physical Layer** (tầng vật lý — tầng L1 trong mô hình OSI, nơi từng bit được biến thành tín hiệu vật lý và truyền qua một môi trường). Với software developer, phần đáng giá nhất của tầng này không phải là chi tiết mã hóa đường truyền, mà là những khái niệm ảnh hưởng trực tiếp lên **thiết kế hệ thống**: bandwidth, throughput, latency và RTT.
+
+<Callout type="info">
+  **Định hướng dev**: Chương này rút gọn có chủ đích. Bạn không cần biết chi
+  tiết Manchester encoding hay 4B/5B. Nhưng bạn **phải** hiểu tại sao ping tới
+  data center bên kia địa cầu luôn ≥ 150 ms bất kể bạn có bao nhiêu Gbps, và tại
+  sao RTT quyết định thời gian bắt tay TCP.
+</Callout>
 
 ## Mục tiêu học tập
 
-- Phân biệt được ba nhóm **transmission media** (copper, fiber optic, wireless) và đọc được bảng so sánh đặc tính của chúng.
-- Giải thích được vì sao bit phải được **encode** thành tín hiệu, và mô tả các sơ đồ NRZ, Manchester, 4B/5B.
-- Phân biệt **baseband** với **broadband**, **analog** với **digital signaling**, và **baud rate** với **bit rate**.
+- Phân biệt được ba nhóm **transmission media** (copper, fiber optic, wireless) và biết chọn cái nào cho từng use case.
 - Định nghĩa và phân biệt **bandwidth**, **throughput**, **latency** (gồm các thành phần delay) và **attenuation**.
-- Tính được **transmission delay** và **propagation delay** cho một liên kết cụ thể bằng công thức.
+- Tính được **transmission delay** và **propagation delay** cho một liên kết cụ thể, và biết khi nào tăng bandwidth có ích, khi nào không.
+- Liên hệ được **RTT** với các quyết định về timeout, retry và tail latency mà bạn sẽ gặp ở tầng ứng dụng.
 
 ## Các bài học trong chương
 
@@ -20,10 +26,6 @@ Chương này đi xuống tầng thấp nhất của ngăn xếp mạng — **Ph
     href="/physical-layer/transmission-media"
   />
   <Cards.Card
-    title="Mã hóa & tín hiệu"
-    href="/physical-layer/encoding-and-signaling"
-  />
-  <Cards.Card
     title="Băng thông & hiệu năng"
     href="/physical-layer/bandwidth-and-performance"
   />
@@ -31,4 +33,4 @@ Chương này đi xuống tầng thấp nhất của ngăn xếp mạng — **Ph
 
 ## Kiến thức tiên quyết
 
-Bạn cần nắm nội dung **Chương 1: Nền tảng mạng máy tính**, đặc biệt là bài **Mô hình OSI 7 tầng** (để biết Physical là L1 và nhận frame từ Data Link ở L2) và bài **Đóng gói & tháo gói dữ liệu** (để hiểu vì sao đơn vị dữ liệu ở tầng này là **bit**). Không cần kiến thức điện tử; mọi khái niệm vật lý đều được giải thích ngay khi xuất hiện.
+Bạn cần nắm nội dung **Chương 1: Nền tảng mạng máy tính**, đặc biệt là bài **Mô hình OSI 7 tầng** và **Đóng gói & tháo gói dữ liệu** để biết Physical là L1 và nhận frame từ Data Link ở L2. Không cần kiến thức điện tử; các khái niệm vật lý được giải thích ngay khi xuất hiện.

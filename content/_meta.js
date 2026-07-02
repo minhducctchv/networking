@@ -9,4 +9,5 @@ export default {
   "network-security": "Chương 7: Network Security",
   "modern-networking": "Chương 8: Modern Networking",
   "practical-tools": "Chương 9: Practical Tools & Troubleshooting",
+  "performance-and-reliability": "Chương 10: Performance & Reliability",
 };

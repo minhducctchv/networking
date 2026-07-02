@@ -1,0 +1,41 @@
+import { Cards, Callout } from "nextra/components";
+
+# Chương 10: Performance & Reliability
+
+Chín chương đầu đưa bạn từ bit trên dây tới HTTP/3 và service mesh. Nhưng khi vận hành hệ thống thật, kiến thức về protocol chưa đủ — bạn cần **cách nghĩ** về thời gian, thất bại, và quan sát. Chương này gom ba nhóm kỹ năng mà developer chuyên nghiệp phải thuộc: hiểu **latency và tail latency** để đặt SLO thực tế, áp **timeout/retry/circuit breaker** để hệ chịu được sự cố, và dùng **observability** (metric + tracing) để nhìn thấy điều gì đang xảy ra.
+
+<Callout type="info">
+  **Định hướng dev**: đây là chương "kỹ năng vận hành" mà không nói về giao thức
+  nào mới. Nó bổ sung góc nhìn còn thiếu ở khóa học networking truyền thống —
+  góc nhìn của người đang duy trì hệ thống production, không phải người đang
+  học giao thức.
+</Callout>
+
+## Mục tiêu học tập
+
+- Phân biệt **latency trung bình** với **tail latency** (P95/P99/P999); giải thích tại sao P99 quan trọng hơn P50 với hệ thống có scale.
+- Tính **latency budget** cho một API dựa trên độ trễ mạng (Chương 2), server processing, và các call phụ.
+- Áp dụng **timeout**, **retry với exponential backoff + jitter**, và **circuit breaker** để hệ không sập vì lỗi thoáng qua.
+- Thiết kế **golden signals** (RED metrics) và **distributed tracing** để nhìn xuyên các service khi có sự cố.
+- Hiểu **eBPF** là gì và tại sao nó thay đổi cách quan sát mạng ở tầng kernel.
+
+## Các bài học trong chương
+
+<Cards>
+  <Cards.Card
+    title="Latency & Tail Latency"
+    href="/performance-and-reliability/latency-and-tail-latency"
+  />
+  <Cards.Card
+    title="Timeouts, Retries & Circuit Breakers"
+    href="/performance-and-reliability/timeouts-retries-circuit-breakers"
+  />
+  <Cards.Card
+    title="Observability & Tracing"
+    href="/performance-and-reliability/observability-and-tracing"
+  />
+</Cards>
+
+## Kiến thức tiên quyết
+
+Chương này dựa vào nhiều mảng đã học. Từ **Chương 2** bạn cần khái niệm **RTT, latency, propagation delay** để hiểu latency budget bị chi phối bởi khoảng cách vật lý. Từ **Chương 5** bạn cần **TCP three-way handshake** và cơ chế retransmit để hiểu vì sao TCP đã tự retry một phần nhưng vẫn cần retry ở tầng ứng dụng. Từ **Chương 9** bạn cần các công cụ đo latency (curl `-w`, ping, traceroute) và cách viết client có timeout. Nếu đã đọc **Chương 8**, bạn sẽ thấy service mesh tự làm nhiều thứ ở đây — bài này giải thích **vì sao** những pattern đó lại cần.

@@ -1,0 +1,224 @@
+import { Callout } from "nextra/components";
+
+# Web Security: CORS, Cookies & CSRF
+
+Các bài trước nói về network security ở tầng hạ tầng: firewall, mã hóa, phòng thủ vành đai. Nhưng developer web đối mặt hằng ngày với một lớp bảo mật khác — thứ trình duyệt tự thực thi để bảo vệ user khỏi trang độc. Ba khái niệm cốt lõi ở lớp này là **Same-Origin Policy**, **CORS**, và **cookie security attributes**; kết hợp lại chúng chống được **XSS** và **CSRF** — hai loại tấn công web phổ biến nhất. Bài này giải thích các mảnh ghép và cách chúng khớp vào nhau.
+
+## Same-Origin Policy: nền tảng
+
+**Same-Origin Policy (SOP)** là quy tắc mặc định mà mọi browser thực thi: **JavaScript từ một origin chỉ được phép đọc dữ liệu từ chính origin đó** (có ngoại lệ có kiểm soát cho các phần tử như `<script>`, `<img>`, `<link>`). **Origin** = tổ hợp `(scheme, hostname, port)`.
+
+```text
+https://example.com          <- origin A
+https://example.com:8080     <- origin B (khác port)
+http://example.com           <- origin C (khác scheme)
+https://api.example.com      <- origin D (khác subdomain, khác hostname)
+https://example.com/api      <- vẫn origin A (path không tính)
+```
+
+Nhờ SOP, script chạy trên `https://evil.com` không thể mở tab `https://bank.com` và đọc số dư của bạn qua fetch/XHR. Đây là hàng rào cơ bản nhất của web.
+
+<Callout type="warning">
+  SOP áp cho **đọc response**, không áp cho **gửi request**. `evil.com` vẫn có
+  thể gửi một POST tới `bank.com` bằng form submit (không cần JS đọc phản hồi) —
+  đây là kẽ hở dẫn tới CSRF, sẽ đến ở phần cuối bài.
+</Callout>
+
+## CORS: mở SOP có kiểm soát
+
+Khi trang web thực sự cần gọi API ở origin khác (ví dụ `app.example.com` gọi `api.example.com`), SOP sẽ chặn. **CORS** (Cross-Origin Resource Sharing — cơ chế cho phép server công khai chấp nhận request từ origin khác qua các HTTP header) là cách mở SOP có kiểm soát: **server** khai báo "tôi cho phép origin nào gọi", browser tôn trọng khai báo đó.
+
+Cần nhấn ngay: **CORS không bảo vệ server**. Nó cho phép **browser** biết có được phép đọc response hay không. Server vẫn nhận và xử lý request; nếu server không muốn ai gọi, phải chặn ở tầng ứng dụng hoặc firewall, không phải chờ CORS.
+
+### Simple request
+
+Với các request "simple" (GET/HEAD/POST với `Content-Type` là `text/plain`, `application/x-www-form-urlencoded`, hoặc `multipart/form-data`, không có header custom), browser gửi thẳng và kiểm CORS trong response:
+
+```text
+Client (JS trên https://app.example.com) gửi:
+    GET /users HTTP/1.1
+    Host: api.example.com
+    Origin: https://app.example.com
+
+Server (api.example.com) trả về:
+    HTTP/1.1 200 OK
+    Access-Control-Allow-Origin: https://app.example.com
+    Content-Type: application/json
+
+    [{"id": 1, "name": "Alice"}]
+```
+
+Browser đọc header **`Access-Control-Allow-Origin`**: nếu khớp origin của trang, JS được đọc response; nếu không khớp, browser **chặn JS** đọc và ném lỗi CORS (nhưng response vẫn tới nơi — request vẫn được server xử lý).
+
+### Preflight request
+
+Với các request "non-simple" (dùng method như `PUT`/`DELETE`, có header custom như `Authorization`, hoặc `Content-Type: application/json`), browser tự động gửi trước một **preflight** dạng `OPTIONS` để hỏi server có cho phép không:
+
+```text
+Preflight (browser tự gửi):
+    OPTIONS /users/42 HTTP/1.1
+    Host: api.example.com
+    Origin: https://app.example.com
+    Access-Control-Request-Method: DELETE
+    Access-Control-Request-Headers: authorization, content-type
+
+Preflight response (server trả):
+    HTTP/1.1 204 No Content
+    Access-Control-Allow-Origin: https://app.example.com
+    Access-Control-Allow-Methods: GET, POST, PUT, DELETE
+    Access-Control-Allow-Headers: authorization, content-type
+    Access-Control-Max-Age: 86400
+
+Sau khi preflight OK, browser mới gửi request thật:
+    DELETE /users/42 HTTP/1.1
+    Host: api.example.com
+    Authorization: Bearer <token>
+    ...
+```
+
+**`Access-Control-Max-Age`** báo browser cache kết quả preflight bao lâu để không phải hỏi lại; giá trị lớn (24h) tránh preflight cho mọi request và giảm latency.
+
+<Callout type="warning">
+  Đừng cấu hình `Access-Control-Allow-Origin: *` cho API cần credential — nó vô
+  hiệu hóa việc gửi cookie. Nếu cần cookie xuyên origin, bạn phải khai origin cụ
+  thể (không `*`) và thêm **`Access-Control-Allow-Credentials: true`**. Client
+  cũng phải gửi `credentials: "include"` khi fetch. Ba điều kiện này thiếu một
+  là fail.
+</Callout>
+
+## Cookies và ba thuộc tính an toàn
+
+Cookie là cách web giữ trạng thái phiên (đã học ở HTTP là stateless). Header **`Set-Cookie`** trong response tạo cookie; browser tự gửi lại trong header `Cookie` của mọi request cùng domain. Ba thuộc tính an toàn dev **phải** biết:
+
+**`HttpOnly`** — cookie **không đọc được từ JavaScript** (`document.cookie`). Nếu trang bị XSS (script độc chạy trong context của trang), attacker không lấy được session cookie. Bắt buộc cho mọi cookie phiên đăng nhập.
+
+**`Secure`** — cookie **chỉ gửi qua HTTPS**, không bao giờ qua HTTP thuần. Ngăn nghe lén trên mạng công cộng.
+
+**`SameSite`** — kiểm soát cookie có được gửi kèm request **cross-site** không. Ba giá trị:
+
+- `Strict` — chỉ gửi khi request bắt nguồn từ **chính site đó**. An toàn nhất nhưng phá trải nghiệm khi user click link từ email vào site (không có cookie đăng nhập).
+- `Lax` (mặc định mới) — không gửi cho cross-site request nói chung, **nhưng có gửi cho top-level navigation an toàn** (GET khi user click link). Cân bằng tốt cho hầu hết trường hợp.
+- `None` — cookie luôn được gửi, kể cả cross-site. **Bắt buộc kèm `Secure`** trong browser hiện đại. Chỉ dùng khi thực sự cần (ví dụ embed widget xuyên site).
+
+Ví dụ một cookie phiên đăng nhập lý tưởng:
+
+```text
+Set-Cookie: sessionid=abc123; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=3600
+```
+
+## CSRF và cách chặn
+
+**CSRF** (Cross-Site Request Forgery — trang độc dụ browser của user gửi request tới trang đích trong khi user đang có phiên đăng nhập) lợi dụng đúng chỗ SOP không chặn: **gửi request cross-site** (dù JS không đọc được phản hồi).
+
+Kịch bản kinh điển: user đang đăng nhập `bank.com`. Trang `evil.com` có:
+
+```html
+<!-- Trên evil.com -->
+<form action="https://bank.com/transfer" method="POST">
+  <input name="to" value="attacker" />
+  <input name="amount" value="100000" />
+</form>
+<script>document.forms[0].submit();</script>
+```
+
+Khi user vào `evil.com`, browser tự động submit form kèm cookie `bank.com` (vì cookie tự đi theo mọi request tới `bank.com`). Server thấy cookie hợp lệ → thực hiện chuyển tiền.
+
+### Ba lớp phòng thủ
+
+**Lớp 1 — `SameSite=Lax` hoặc `Strict`**. Với cookie phiên `SameSite=Lax` (hoặc `Strict`), browser **không gửi cookie** khi form POST đến từ origin khác — CSRF cổ điển bị chặn tự động. Đây là lý do `Lax` giờ là mặc định trong browser hiện đại.
+
+**Lớp 2 — CSRF token**. Server sinh một token ngẫu nhiên gắn với phiên, nhúng vào form hoặc header cho client. Mọi request "đổi trạng thái" (POST/PUT/DELETE) phải kèm token đúng. Vì token không nằm trong cookie mà trong body/header, trang độc không đọc được (nhờ SOP) nên không giả được request hợp lệ:
+
+```html
+<!-- Server render form kèm token -->
+<form action="/transfer" method="POST">
+  <input type="hidden" name="csrf_token" value="a3f2c891e0d5..." />
+  <input name="to" />
+  <input name="amount" />
+</form>
+```
+
+Với SPA gọi API bằng fetch, token thường gửi qua header custom (`X-CSRF-Token`), buộc request đi qua preflight CORS — thêm một lớp kiểm.
+
+**Lớp 3 — kiểm origin header**. Với các request có tác dụng thay đổi trạng thái, server kiểm **`Origin`** hoặc **`Referer`** header và từ chối nếu không thuộc site của mình. Nhanh và hiệu quả cho các API JSON hiện đại.
+
+Đa phần framework hiện nay (Django, Rails, Laravel, Spring) đã tích hợp CSRF token mặc định. Việc của bạn là **không tắt nó**.
+
+## Security headers khác dev cần biết
+
+Vài header response tăng bảo mật miễn phí:
+
+- **`Strict-Transport-Security` (HSTS)** — buộc browser luôn dùng HTTPS cho domain, kể cả khi user gõ `http://`. Ngăn SSL stripping (đã học ở bài Mối đe dọa mạng). Ví dụ: `Strict-Transport-Security: max-age=31536000; includeSubDomains`.
+
+- **`Content-Security-Policy` (CSP)** — khai báo nguồn nào được phép load script/style/ảnh. Chống XSS mạnh mẽ. Ví dụ: `Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.trusted.com`.
+
+- **`X-Content-Type-Options: nosniff`** — cấm browser tự đoán MIME type; nếu server nói là `text/plain` thì browser không thực thi như JS dù nội dung trông giống JS. Ngăn một số kiểu XSS.
+
+- **`X-Frame-Options: DENY`** hoặc **`Content-Security-Policy: frame-ancestors 'none'`** — cấm trang bị nhúng trong `<iframe>` của trang khác. Ngăn **clickjacking** (attacker overlay UI của bạn dưới một trang bẫy).
+
+Bạn không cần tự nhớ hết; dùng công cụ như [securityheaders.com](https://securityheaders.com) hoặc [Mozilla Observatory](https://observatory.mozilla.org) để quét site và nhận điểm số + gợi ý.
+
+## Ví dụ thực tế: một login response tốt
+
+Response từ endpoint đăng nhập nên trông như thế này:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+Set-Cookie: sessionid=abc123; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=86400
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+Content-Security-Policy: default-src 'self'
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+
+{"user": {"id": 42, "name": "Alice"}}
+```
+
+Cookie phiên có đủ ba thuộc tính an toàn; response có HSTS, CSP, nosniff, và cấm iframe.
+
+## Tóm tắt nhanh
+
+- **Same-Origin Policy** cấm JS đọc dữ liệu cross-origin (nhưng không cấm gửi request).
+- **CORS** mở SOP có kiểm soát qua header `Access-Control-*`; **CORS bảo vệ user trên browser, không bảo vệ server**.
+- Cookie phiên phải có: **`HttpOnly`** (chặn XSS đọc), **`Secure`** (chỉ qua HTTPS), **`SameSite=Lax`** hoặc `Strict` (chặn CSRF cổ điển).
+- **CSRF** chặn bằng ba lớp: `SameSite` cookie, CSRF token, kiểm `Origin` header.
+- Security headers miễn phí: **HSTS**, **CSP**, **X-Content-Type-Options: nosniff**, **X-Frame-Options: DENY**.
+
+## Bài tập
+
+### Câu hỏi lý thuyết
+
+1. Giải thích vì sao câu nói "CORS bảo vệ server khỏi request từ trang khác" là **sai**. CORS thực sự bảo vệ ai và bảo vệ khỏi cái gì?
+2. Một cookie phiên có `HttpOnly` và `Secure` nhưng **không** có `SameSite`. Trang bị CSRF xảy ra ra sao, dù `HttpOnly` đã ngăn được XSS đọc cookie? Đề xuất giá trị `SameSite` phù hợp và giải thích.
+
+### Bài tập tình huống
+
+3. SPA của bạn ở `https://app.example.com` gọi API tại `https://api.example.com` bằng fetch, có dùng cookie phiên. Bạn thấy lỗi CORS trong DevTools cho request `DELETE /users/42`. Liệt kê ba header response mà server phải trả về đúng để request hoạt động, và giải thích cả preflight vì sao xảy ra.
+
+### Phân tích
+
+4. Một team đang bàn: "Chỉ cần bật CSP là đủ, không cần `HttpOnly` cho cookie". Bạn có đồng ý không? Giải thích quan hệ giữa CSP (ngăn XSS chạy) và `HttpOnly` (ngăn XSS đọc cookie), và vì sao **defense in depth** khuyến khích bật cả hai.
+
+<details>
+  <summary>Đáp án & gợi ý</summary>
+
+1. "CORS bảo vệ server" sai vì **server vẫn nhận và xử lý mọi request**, kể cả cross-origin — CORS header chỉ hiện trong response. Cái CORS quyết định là **browser có cho JavaScript đọc response hay không**. Nói cách khác, CORS bảo vệ **user trên browser** khỏi việc trang độc dùng chính browser của user để đọc dữ liệu ở origin khác nơi user đã đăng nhập. Muốn thật sự chặn request cross-origin không được xử lý, phải check `Origin` ở server hoặc chặn ở firewall/gateway.
+
+2. `HttpOnly` ngăn JS đọc cookie, chống XSS lấy cookie. Nhưng nó **không** cấm browser gửi cookie kèm request. Trang độc `evil.com` có thể submit một form POST tới `bank.com`; browser tự động gắn cookie phiên `bank.com` (dù JS `evil.com` không đọc được cookie đó). Server thấy cookie hợp lệ → thực hiện hành động → CSRF thành công. Giải pháp: đặt **`SameSite=Lax`** cho cookie phiên. Với Lax, browser không gửi cookie cho cross-site POST — CSRF cổ điển bị chặn tự động. `Strict` an toàn hơn nhưng phá luồng "click link từ email", `Lax` cân bằng đủ tốt.
+
+3. Vì request `DELETE` với credential (`credentials: "include"`) là **non-simple**, browser gửi preflight `OPTIONS` trước. Server phải trả về:
+   - `Access-Control-Allow-Origin: https://app.example.com` (đúng origin, **không dùng `*`** vì có credential)
+   - `Access-Control-Allow-Methods: DELETE` (hoặc chứa DELETE)
+   - `Access-Control-Allow-Credentials: true` (cho phép cookie đi kèm)
+   Cả preflight response và response thật đều phải có các header này. Client fetch phải kèm `credentials: "include"`.
+
+4. **Không đồng ý**. CSP giảm khả năng XSS xảy ra (script từ nguồn lạ không chạy), nhưng CSP có thể bị bypass qua các lỗ hổng cấu hình, `'unsafe-inline'`, hoặc các phần plugin cũ. `HttpOnly` giảm hậu quả nếu XSS lỡ xảy ra (script chạy nhưng không lấy được cookie phiên). Đây đúng là **defense in depth** đã học ở bài Thiết kế mạng an toàn: mỗi lớp có thể thất bại, nên xếp nhiều lớp độc lập. Bật cả CSP + `HttpOnly` + `Secure` + `SameSite` cho chi phí rất nhỏ nhưng thu về nhiều lớp phòng thủ.
+
+</details>
+
+## Nguồn tham khảo
+
+- Mozilla Developer Network, "Cross-Origin Resource Sharing (CORS)" và "Same-origin policy" — tài liệu tham chiếu chuẩn của web platform.
+- A. Barth, _HTTP State Management Mechanism_, RFC 6265 và _Cookies: HTTP State Management Mechanism_, RFC 6265bis (bao gồm `SameSite`).
+- OWASP, _Cross-Site Request Forgery (CSRF) Prevention Cheat Sheet_.
+- W3C, _Content Security Policy Level 3_ specification.

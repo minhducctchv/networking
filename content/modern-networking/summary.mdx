@@ -1,52 +1,69 @@
 # Tóm tắt Chương 8: Modern Networking
 
-Chương này soi lại nền tảng cũ dưới ánh sáng của hạ tầng hiện đại. Dưới đây là các khái niệm chính theo từng bài, sau đó là bài tập ôn tập kết hợp nhiều bài và gọi tên cụ thể khái niệm truyền thống mà mỗi ý dựa vào.
+Chương này soi lại nền tảng cũ dưới ánh sáng của hạ tầng hiện đại. Dưới đây là các khái niệm chính theo từng bài, sau đó là bài tập ôn tập kết hợp.
 
 ## Các khái niệm chính
 
 ### Software-Defined Networking
 
-- **control plane** (quyết định đường đi) và **data plane** (chuyển tiếp packet) trong mạng truyền thống nằm chung trong mỗi thiết bị; **SDN** tách rời và tập trung control plane vào một **SDN controller**.
-- Controller dùng **southbound interface** (OpenFlow) để cài **flow entry** xuống switch, và **northbound interface** (REST API) để nhận lệnh từ ứng dụng.
-- SDN không xóa bỏ hai plane của Chương 4 mà di chuyển control plane ra ngoài, biến mạng thành thứ lập trình được.
+- **Control plane** (quyết định đường) và **data plane** (chuyển tiếp packet) trong mạng truyền thống nằm chung mỗi thiết bị; **SDN** tách và tập trung control plane vào **SDN controller**.
+- Controller dùng **southbound** (OpenFlow) cài **flow entry** xuống switch, **northbound** (REST API) nhận lệnh từ ứng dụng.
 
 ### Cloud Networking
 
-- **VPC** là mạng ảo riêng định nghĩa bằng **CIDR**, và **subnet** trên cloud dùng đúng phép subnetting của Chương 4; public/private khác nhau ở route table và Internet/NAT Gateway.
-- **Security group** là firewall ảo **stateful** theo từng instance (kế thừa firewall Chương 7); **Network ACL** là lớp **stateless** theo subnet.
-- **Load balancer** có loại **L4** (IP:port) và **L7** (HTTP); thuật ngữ khác nhau giữa AWS, GCP, Azure nhưng khái niệm là một.
+- **VPC** là mạng ảo riêng định nghĩa bằng **CIDR**; **subnet** trên cloud dùng đúng phép subnetting; public/private khác ở route table và Internet/NAT Gateway.
+- **Security group** stateful theo instance; **Network ACL** stateless theo subnet.
+- **Load balancer** L4 (IP:port) và L7 (HTTP); tên khác nhau giữa AWS, GCP, Azure.
 
 ### Container Networking
 
-- Docker có bốn mode: **bridge** (mặc định, `docker0` là switch L2 ảo + NAT), **host**, **none**, **overlay**.
-- Kubernetes bắt mỗi **Pod** có IP riêng và mọi Pod giao tiếp **không NAT** (mạng phẳng); **Pod-to-Pod** do CNI plugin ghép bằng overlay hoặc routing thuần.
-- **Service/ClusterIP** là IP ảo ổn định hoạt động như **load balancer L4** nội bộ trỏ tới các Pod theo selector.
+- Docker có 4 mode: **bridge** (`docker0` = switch L2 ảo + NAT), **host**, **none**, **overlay**.
+- Kubernetes: mỗi **Pod** một IP, mọi Pod giao tiếp **không NAT**; **CNI plugin** ghép qua overlay hoặc routing thuần.
+- **Service/ClusterIP** là IP ảo ổn định = load balancer L4 nội bộ trỏ tới các Pod theo selector.
+
+### Kubernetes NetworkPolicy & Ingress
+
+- Kubernetes mặc định **mọi Pod nói chuyện được**; **NetworkPolicy** khai báo firewall L3/L4, do **CNI plugin** thực thi (Calico/Cilium).
+- Pattern: **default deny** rồi mở rules theo label selector; nhớ mở **Egress DNS** khi strict.
+- **Ingress** cung cấp entry point HTTP/HTTPS chung cho nhiều service qua hostname + path; **Ingress controller** (nginx, Traefik, Envoy-based) thực thi.
+- **cert-manager** tự động hóa cert Let's Encrypt cho Ingress. **Gateway API** là chuẩn kế thừa Ingress với traffic split native.
+
+### Service Mesh & mTLS
+
+- **Service mesh** rút logic mạng ra khỏi app: **sidecar proxy** (data plane) + **control plane** trung tâm.
+- **mTLS tự động** cho mọi call giữa service; chính sách theo **identity** (SPIFFE URI) — zero trust cấp workload.
+- **Traffic management** khai báo (retry, timeout, circuit breaker, canary weight); **observability miễn phí** (golden metrics + tracing).
+- Đánh đổi: latency +1-3 ms/hop, RAM/CPU overhead, complexity, khó debug.
 
 ### Network Virtualization & Overlay
 
-- **overlay** dựng trên **underlay** vật lý bằng **tunneling** — chính là **encapsulation** (Chương 1) bọc thêm một lớp.
-- **VXLAN** mở rộng **VLAN** (Chương 3): **VNI 24-bit** thay VID 12-bit, bọc frame Ethernet trong UDP (port 4789); hai đầu là **VTEP**.
-- **GRE** (RFC 2784) bọc gói L3 bất kỳ vào IP (protocol 47) tạo đường hầm điểm-điểm; **vSwitch** là switch phần mềm kiêm VTEP và nhận điều khiển SDN qua OpenFlow.
+- **Overlay** dựng trên **underlay** vật lý bằng **tunneling** — **encapsulation** bọc thêm một lớp.
+- **VXLAN** mở rộng VLAN: **VNI 24-bit** thay VID 12-bit, bọc frame trong UDP; **VTEP** ở hai đầu.
+- **GRE** bọc gói L3 bất kỳ vào IP; **vSwitch** là switch phần mềm kiêm VTEP.
 
 ## Bài tập ôn tập
 
-1. **(Lý thuyết — kết hợp "Software-Defined Networking" + "Network Virtualization & Overlay")** Một **vSwitch** như Open vSwitch vừa hỗ trợ **OpenFlow** vừa làm **VTEP** cho VXLAN. Giải thích vai trò của nó dưới hai góc nhìn: là điểm để **SDN controller** cài flow entry (control/data plane), và là điểm bọc/mở **overlay**. Hai vai trò này liên hệ với switching của Chương 3 ra sao?
+1. **(Lý thuyết — kết hợp "Kubernetes NetworkPolicy & Ingress" + "Service Mesh & mTLS")** So sánh **NetworkPolicy** và **AuthorizationPolicy** của Istio. Với chính sách "chỉ service A được gọi POST /api/checkout trên service B", công cụ nào là bắt buộc và vì sao? Trong cluster zero-trust, hai công cụ này bổ trợ nhau ra sao?
 
-2. **(Tình huống — kết hợp "Cloud Networking" + "Container Networking")** Bạn triển khai một ứng dụng web trên Kubernetes chạy trong một **VPC**. Mô tả lưu lượng đi từ Internet vào tới một **Pod**: qua **load balancer** của cloud (bài Cloud Networking), tới **Service/ClusterIP**, rồi tới Pod. Ở mỗi chặng, hãy chỉ ra **security group** (Chương 7) và mô hình **Pod-to-Pod không NAT** tham gia thế nào.
+2. **(Tình huống thực tế — kết hợp "Container Networking" + "Kubernetes NetworkPolicy & Ingress" + "Service Mesh & mTLS")** Bạn triển khai một web app với `frontend`, `backend`, và `database` trong cluster Kubernetes, cần lộ ra `https://app.example.com`. Đề xuất kiến trúc dùng: (a) Ingress + cert-manager cho traffic vào; (b) NetworkPolicy chặn `database` không nhận traffic ngoài `backend`; (c) khi nào bổ sung service mesh mang lại giá trị vượt chi phí?
 
-3. **(Tính toán — kết hợp "Network Virtualization & Overlay" + "Cloud Networking")** Một data center cần cấp mạng ảo riêng cho nhiều khách hàng. Nếu dùng **VLAN** (VID 12-bit, Chương 3) thì tối đa bao nhiêu khách? Nếu dùng **VXLAN** (VNI 24-bit) thì bao nhiêu? Giải thích vì sao cloud (bài Cloud Networking) gần như luôn chọn VXLAN khi số tenant lớn.
+3. **(Tính toán — kết hợp "Network Virtualization & Overlay" + "Cloud Networking")** Bạn thiết kế mạng cho một cloud provider phục vụ 50 000 khách hàng, mỗi khách hàng có VPC riêng. Nếu dùng **VLAN** (VID 12-bit), bạn phục vụ được bao nhiêu khách? Nếu dùng **VXLAN** (VNI 24-bit)? Vì sao cloud provider luôn chọn VXLAN?
 
-4. **(Tình huống — kết hợp "Software-Defined Networking" + "Container Networking")** Trong một cluster Kubernetes lớn, vì sao mô hình **control plane tập trung** kiểu SDN phù hợp để cài luật mạng cho hàng nghìn Pod hơn là cấu hình tay từng node? Liên hệ tới control plane phân tán của Chương 4.
+4. **(Tình huống — kết hợp "Software-Defined Networking" + "Service Mesh & mTLS")** Cả SDN và service mesh đều "tách control plane khỏi data plane và tập trung điều khiển bằng phần mềm". Nêu hai khác biệt: (a) tầng nào của OSI mỗi cái hoạt động; (b) đơn vị mà nó điều khiển (packet vs. request/RPC). Kết luận vì sao chúng bổ trợ, không thay thế nhau.
 
 <details>
   <summary>Đáp án</summary>
 
-1. Là điểm SDN: vSwitch giữ một **flow table** mà controller cài qua OpenFlow (southbound), tức control plane nằm ở controller còn vSwitch chỉ làm data plane — đúng tách rời của bài SDN. Là **VTEP**: vSwitch bọc frame của VM vào VXLAN khi ra khỏi host và bóc khi nhận về, dựng overlay trên underlay. Cả hai vai trò đều là phần mở rộng của **switch L2 Chương 3**: vSwitch vẫn học MAC và chuyển frame giữa cổng ảo, chỉ thêm khả năng lập trình (SDN) và đóng gói (overlay).
+1. **NetworkPolicy** hoạt động ở **L3/L4** (IP + port + protocol); không đọc được HTTP method hay path. **AuthorizationPolicy của Istio** hoạt động ở **L7** (method, path, header) và theo **identity SPIFFE** qua mTLS. Chính sách "chỉ POST /api/checkout" đòi kiểm method và path ⇒ **bắt buộc dùng service mesh** với AuthorizationPolicy. Trong zero-trust: NetworkPolicy chặn thô ở L3/L4 (default deny), mesh làm mịn ở L7 và xác thực identity workload. NetworkPolicy hoạt động luôn không cần app biết; mesh cần sidecar và có overhead. Kết hợp cả hai tạo defense-in-depth cho traffic đông-tây.
 
-2. Internet → **load balancer** của cloud (L4/L7) phân phối tới các node; trước khi tới được instance/node, **security group** (Chương 7) phải có luật allow cho port web (vd 443). Lưu lượng vào tới **Service/ClusterIP**, kube-proxy chuyển tiếp (DNAT) tới một **Pod** backend theo selector. Vì Kubernetes dùng **Pod-to-Pod không NAT** (mạng phẳng), gói tới Pod giữ ngữ nghĩa IP-tới-IP; nếu khác node thì CNI ghép qua overlay/routing. Security group quyết định ai vào được tầng ngoài; mô hình mạng phẳng quyết định cách gói tới đúng Pod bên trong.
+2. (a) **Ingress** (nginx-ingress hoặc Envoy-based) với TLS termination; **cert-manager** cấp cert Let's Encrypt tự động cho `app.example.com`; Ingress route `/` → service `frontend`. (b) **NetworkPolicy** với default-deny ingress cho namespace, rồi mở:
+   - `frontend` nhận traffic từ ingress controller
+   - `backend` nhận traffic từ `frontend`
+   - `database` nhận traffic **chỉ** từ `backend` port 5432; egress DNS mở tối thiểu
+     (c) **Service mesh** bổ sung giá trị khi: có > ~10 service; cần chính sách L7 chi tiết (chỉ method GET, chỉ path /api/\*); muốn mTLS cho mọi call đông-tây; cần canary deployment thường xuyên; cần observability không phải instrument code. Với web app 3 service này chưa nhất thiết; đợi khi hệ phát triển hoặc yêu cầu bảo mật bắt buộc mTLS trong cluster.
 
-3. VLAN: `2^12 = 4096` (dùng được 4094) → tối đa ~4094 mạng/khách. VXLAN: `2^24 = 16.777.216` → ~16,7 triệu. Cloud chọn VXLAN vì số tenant dễ vượt 4094, và vì VXLAN bọc trong UDP/IP nên mạng ảo trải được qua nhiều subnet underlay — điều VLAN 802.1Q không làm được.
+3. VLAN: `2^12 = 4096` (dùng được 4094) — không đủ cho 50 000 khách. VXLAN: `2^24 = 16 777 216` — thừa sức. Cloud provider chọn VXLAN vì: (i) không gian VNI đủ lớn cho hàng triệu tenant; (ii) VXLAN bọc frame trong UDP/IP nên mạng ảo trải qua nhiều subnet underlay (data center có thể phân tán vật lý), điều VLAN 802.1Q không làm được; (iii) tương thích tốt với overlay giữa các region.
 
-4. Vì control plane phân tán (Chương 4) bắt mỗi node tự tính và phải cấu hình tay từng node, vừa chậm vừa dễ lệch khi quy mô hàng nghìn Pod thay đổi liên tục. **Control plane tập trung** kiểu SDN cho phép khai báo chính sách **một lần** ở controller rồi đẩy flow xuống mọi node/vSwitch, nhất quán và nhanh — phù hợp với mạng Pod biến động cao của Kubernetes.
+4. (a) **SDN** hoạt động ở **L2/L3** (packet, flow entry match theo MAC/IP/port); **service mesh** hoạt động ở **L7** (HTTP/gRPC request, match theo method/path/header/JWT). (b) SDN điều khiển đơn vị **packet** (route/forward/drop); service mesh điều khiển đơn vị **request/RPC** (retry, timeout, circuit break, canary). Bổ trợ: SDN quản lý cấu trúc mạng (VPC, subnet, VXLAN, security group) — hạ tầng bên dưới. Service mesh quản lý logic giao tiếp giữa các service — tầng ứng dụng bên trên. Không thay thế được nhau vì làm việc ở hai tầng khác nhau và có scope khác nhau.
 
 </details>

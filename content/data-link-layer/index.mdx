@@ -1,16 +1,23 @@
-import { Cards } from "nextra/components";
+import { Cards, Callout } from "nextra/components";
 
 # Chương 3: Data Link Layer
 
-Chương này đi sâu vào **Data Link Layer** (tầng liên kết dữ liệu — Layer 2 trong mô hình OSI, lo việc truyền dữ liệu qua một chặng vật lý giữa hai thiết bị kề nhau). Sau khi Chương 2 cho thấy bit được biến thành tín hiệu và truyền trên medium như thế nào, chương này trả lời câu hỏi tiếp theo: làm sao gom dòng bit đó thành các đơn vị có nghĩa, gắn địa chỉ cho chúng, phát hiện khi chúng bị hỏng, và chuyển chúng đúng nơi trong một mạng cục bộ. Khi học xong, bạn sẽ hiểu trọn vẹn một frame Ethernet đi từ card mạng này tới card mạng kia ra sao.
+Chương này đi vào **Data Link Layer** (Layer 2 trong mô hình OSI, lo việc truyền dữ liệu qua một chặng vật lý giữa hai thiết bị kề nhau). Sau khi Chương 2 cho thấy bit được truyền trên medium như thế nào, chương này trả lời câu hỏi: làm sao gom dòng bit đó thành frame, gắn địa chỉ, và chuyển frame đúng nơi trong một mạng cục bộ.
+
+<Callout type="info">
+  **Định hướng dev**: bạn ít khi cấu hình switch/VLAN trực tiếp, nhưng MAC
+  address, MTU, và VLAN là những khái niệm gặp thường xuyên khi đọc log network,
+  debug lỗi kết nối trong Kubernetes/Docker, hay hiểu cách VXLAN của cloud hoạt
+  động (Chương 8). Chương này rút gọn có chủ đích — không có bài CRC tính tay vì
+  nó không giúp bạn viết ứng dụng.
+</Callout>
 
 ## Mục tiêu học tập
 
-- Giải thích **framing** và cách phân định ranh giới frame bằng byte stuffing và bit stuffing.
-- Đọc và phân tích một **MAC address** 48-bit: phần OUI, phần thiết bị, và phân biệt unicast/multicast/broadcast.
-- Tính được **FCS** bằng **CRC** qua phép chia nhị phân (XOR) từng bước, và mô tả cách máy nhận kiểm lỗi.
-- Liệt kê đầy đủ các trường trong frame **Ethernet** theo chuẩn **IEEE 802.3** cùng kích thước và mục đích của từng trường.
-- Mô tả cách **switch** học MAC address, ra quyết định forward/flood/filter, và cách **VLAN** chia tách broadcast domain.
+- Đọc và phân tích một **MAC address** 48-bit; phân biệt unicast/multicast/broadcast.
+- Hiểu vai trò của **FCS** (chỉ phát hiện lỗi, không sửa; retry ở tầng cao hơn).
+- Liệt kê được các trường trong frame **Ethernet** theo chuẩn **IEEE 802.3** và biết **MTU** mặc định 1500 byte có ý nghĩa gì với MSS của TCP.
+- Mô tả cách **switch** học MAC address và ra quyết định forward/flood/filter; hiểu **VLAN 802.1Q** để chia broadcast domain.
 
 ## Các bài học trong chương
 
@@ -18,10 +25,6 @@ Chương này đi sâu vào **Data Link Layer** (tầng liên kết dữ liệu 
   <Cards.Card
     title="Framing & MAC address"
     href="/data-link-layer/framing-and-mac-addressing"
-  />
-  <Cards.Card
-    title="Phát hiện lỗi với CRC"
-    href="/data-link-layer/error-detection-crc"
   />
   <Cards.Card
     title="Ethernet & cấu trúc frame"
@@ -35,4 +38,4 @@ Chương này đi sâu vào **Data Link Layer** (tầng liên kết dữ liệu 
 
 ## Kiến thức tiên quyết
 
-Bạn nên hoàn thành **Chương 1** (đặc biệt là mô hình OSI, vị trí của Layer 2, và quá trình encapsulation/đơn vị dữ liệu đổi tên thành **frame** ở tầng Data Link) và **Chương 2** (cách bit được mã hóa và truyền thành tín hiệu trên medium vật lý). Chương 3 đứng ngay trên những nền tảng đó: nó nhận dòng bit thô từ Physical Layer và biến chúng thành các frame có địa chỉ, có kiểm lỗi.
+Bạn nên hoàn thành **Chương 1** (mô hình OSI, encapsulation, đơn vị dữ liệu ở tầng Data Link là **frame**) và **Chương 2** (cách bit được truyền thành tín hiệu trên medium). Chương 3 đứng ngay trên những nền tảng đó: nó nhận dòng bit thô từ Physical Layer và biến chúng thành các frame có địa chỉ.

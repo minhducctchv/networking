@@ -1,46 +1,64 @@
 # Tóm tắt Chương 6: Application Layer
 
-Chương này đã đi qua các protocol mà lập trình viên dùng trực tiếp ở tầng trên cùng của ngăn xếp: phân giải tên với DNS, trao đổi web an toàn với HTTP/HTTPS, và bộ ba SMTP/FTP/SSH cho email, truyền file và truy cập từ xa. Dưới đây là các khái niệm chính theo từng bài, sau đó là bài tập ôn tập kết hợp nhiều bài.
+Chương này đi qua các protocol mà lập trình viên dùng trực tiếp: DNS, HTTP các phiên bản, giao thức realtime, HTTP caching và CDN, cùng SMTP/FTP/SSH. Dưới đây là các khái niệm chính theo từng bài, sau đó là bài tập ôn tập kết hợp nhiều bài.
 
 ## Các khái niệm chính
 
 ### DNS
 
-- **DNS** biến domain name thành địa chỉ IP, chạy trên **port 53** (UDP mặc định, TCP khi phản hồi lớn hoặc truyền zone).
-- Không gian tên phân cấp **root → TLD → authoritative**; chỉ chặng stub đến recursive resolver là **recursive query**, còn resolver đi hỏi root/TLD/authoritative là **iterative query**.
-- **TTL** quyết định thời gian cache; bốn record cốt lõi là **A** (IPv4), **AAAA** (IPv6), **CNAME** (alias), **MX** (mail server + priority).
+- **DNS** biến domain name thành địa chỉ IP, chạy trên **port 53** (UDP mặc định, TCP khi phản hồi lớn).
+- Không gian tên **root → TLD → authoritative**; chỉ chặng stub đến recursive resolver là **recursive query**, còn resolver đi hỏi root/TLD/authoritative là **iterative query**.
+- **TTL** quyết định thời gian cache; bốn record cốt lõi: **A**, **AAAA**, **CNAME**, **MX**.
 
 ### HTTP & HTTPS
 
-- HTTP là protocol **request/response**, **stateless**, chạy trên TCP **port 80**; HTTPS chạy trên **port 443**.
-- Request gồm **method + path + version**, **header**, **body**; response gồm **status line**, **header**, **body**. Năm nhóm status code: **1xx, 2xx, 3xx, 4xx, 5xx**.
-- **HTTPS = HTTP + TLS**: TLS handshake dùng **certificate** (do **CA** ký) và mã hóa bất đối xứng để thỏa thuận **session key** đối xứng, đem lại confidentiality, integrity và authentication.
+- HTTP là **request/response, stateless**, chạy trên TCP **port 80**; HTTPS trên **port 443**.
+- Request: **method + path + version**, header, body. Response: **status line** với 5 nhóm status code, header, body.
+- **HTTPS = HTTP + TLS**: xác thực qua certificate do CA ký, thỏa thuận session key đối xứng.
+
+### HTTP/2 & HTTP/3
+
+- **HTTP/2** giữ nguyên ngữ nghĩa HTTP nhưng đổi vận chuyển: **binary framing + streams multiplex** trên một TCP + **HPACK** nén header; negotiate qua **ALPN**.
+- HTTP/2 vẫn dính **TCP head-of-line blocking**; **HTTP/3 = HTTP + QUIC** (trên UDP) khắc phục bằng stream độc lập, handshake 1-RTT/0-RTT, và **connection migration**.
+- Thực tế: bật cả ba song song qua CDN; browser chọn HTTP/3 khi được, fallback HTTP/2.
+
+### WebSocket, SSE & gRPC
+
+- **WebSocket** (`wss://`): kênh **full-duplex** trên TCP, bắt đầu bằng HTTP upgrade; không có auto-reconnect. Hợp cho chat, gaming.
+- **SSE** (`text/event-stream`): server đẩy event một chiều qua HTTP; **auto-reconnect có sẵn**. Hợp cho feed, notification.
+- **gRPC** trên **HTTP/2 + protobuf**: 4 kiểu gọi (unary, server/client/bidi streaming); browser cần **gRPC-Web** qua proxy.
+
+### HTTP Caching & CDN
+
+- **`Cache-Control`** điều khiển cache: **`no-cache` = validate, `no-store` = không lưu**; `private`/`public`, `max-age`, `s-maxage`, `immutable`.
+- **`ETag` + `If-None-Match`** cho validation không tải lại body; server trả **`304 Not Modified`**.
+- **CDN** đưa cache tới gần user qua **anycast + edge nodes**; pattern chuẩn cho asset tĩnh: **hash trong tên file + `immutable, max-age=1y`**.
 
 ### SMTP, FTP & SSH
 
-- **SMTP** gửi/chuyển email: **port 25** cho relay giữa MTA, **port 587** cho submission có xác thực.
-- **FTP** truyền file qua hai kênh — **control port 21** và **data port 20**; nên thay bằng SFTP/FTPS vì FTP thuần là plaintext.
-- **SSH** (**port 22**) tạo kênh mã hóa cho shell từ xa, truyền file (SCP/SFTP) và port forwarding.
+- **SMTP** gửi/chuyển email: **port 25** relay, **port 587** submission có xác thực.
+- **FTP**: **port 21** control + **port 20** data; nên thay bằng SFTP/FTPS.
+- **SSH** (**port 22**): kênh mã hóa cho shell từ xa, SCP/SFTP, port forwarding.
 
 ## Bài tập ôn tập
 
-1. **(Lý thuyết — kết hợp "DNS" + "HTTP & HTTPS")** Khi bạn gõ `https://shop.example.com` vào trình duyệt và nhấn Enter, hãy mô tả theo thứ tự: (a) DNS làm gì để có địa chỉ IP, phân biệt recursive và iterative query; (b) sau khi có IP, trình duyệt kết nối tới port nào và TLS handshake dùng certificate ra sao; (c) request đầu tiên có dạng status line/method gì và một response thành công trả về status code nào.
+1. **(Lý thuyết — kết hợp "DNS" + "HTTP & HTTPS" + "HTTP/2 & HTTP/3")** Khi bạn gõ `https://shop.example.com`, hãy mô tả theo thứ tự: (a) DNS resolve, (b) chọn phiên bản HTTP qua ALPN, (c) handshake TLS. Với HTTP/3, bước nào được rút ngắn so với HTTP/2, và tại sao?
 
-2. **(Tình huống — kết hợp "DNS" + "SMTP, FTP & SSH")** Một ứng dụng cần gửi email tới `bob@example.com`. Giải thích vì sao mail server phải tra **record MX** của `example.com` (khái niệm từ bài DNS) trước khi mở kết nối **SMTP**, và sau khi có hostname của mail server thì nó kết nối tới port nào để relay thư.
+2. **(Tình huống — kết hợp "WebSocket, SSE & gRPC" + "HTTP/2 & HTTP/3")** Bạn xây tính năng thông báo push cho web app (server đẩy thông báo mới về từng user). Bạn cân nhắc SSE và WebSocket. Nếu backend đã chạy trên HTTP/2, cách nào phù hợp hơn và vì sao? Nếu ngày mai chuyển sang HTTP/3, có ảnh hưởng gì tới lựa chọn không?
 
-3. **(Tình huống thực tế — kết hợp "HTTP & HTTPS" + "SMTP, FTP & SSH")** Bạn chuẩn bị triển khai một website: cần (a) đẩy file build lên server, (b) đăng nhập server xem log, và (c) phục vụ trang qua kết nối an toàn cho người dùng. Với mỗi việc, chọn protocol và port phù hợp, và chỉ ra điểm chung về bảo mật giữa lựa chọn (a)/(b) với HTTPS ở (c).
+3. **(Tình huống thực tế — kết hợp "HTTP Caching & CDN" + "DNS")** Bạn deploy phiên bản mới của SPA nhưng nhiều user vẫn thấy giao diện cũ dù đã hard-refresh. Kiểm tra: bundle JavaScript có tên `app.js` (không hash), header response là `Cache-Control: max-age=86400`. Chẩn đoán vấn đề và đề xuất pattern để không lặp lại. Liên hệ tới TTL của DNS: có tương đồng nào giữa "TTL DNS cao gây khó migrate IP" và "max-age cao gây khó deploy version mới"?
 
-4. **(Tính toán/suy luận — kết hợp "DNS" + "HTTP & HTTPS")** Một bản ghi A có **TTL** `300` giây, và response HTTP của trang có header `Cache-Control: max-age=600`. Người dùng tải lại trang sau `200` giây. Hỏi: (a) trình duyệt có cần truy vấn DNS lại không, vì sao; (b) trình duyệt có thể dùng lại nội dung trang từ cache không, và mã `304 Not Modified` liên quan thế nào tới tình huống này.
+4. **(Tình huống — kết hợp "HTTP/2 & HTTP/3" + "HTTP Caching & CDN")** Trang thương mại điện tử của bạn phục vụ hàng triệu request/ngày. Bạn cần giảm chi phí origin và cải thiện latency. Hãy đề xuất kết hợp: (a) HTTP version nào bật ở CDN; (b) chiến lược cache cho HTML gốc, asset tĩnh (JS/CSS/ảnh), và API response cá nhân hóa (giỏ hàng người dùng). Giải thích lựa chọn cho từng nhóm.
 
 <details>
   <summary>Đáp án</summary>
 
-1. (a) Stub resolver gửi **recursive query** tới recursive resolver; resolver thực hiện các **iterative query** xuống root → TLD `.com` → authoritative của `example.com` để lấy bản ghi **A/AAAA** cho `shop.example.com`. (b) Có IP rồi, trình duyệt mở TCP tới **port 443** và chạy **TLS handshake**: server gửi **certificate** (do **CA** ký) để xác thực, hai bên thỏa thuận **session key** đối xứng. (c) Request đầu là `GET / HTTP/1.1` kèm header `Host`; response thành công trả về **`200 OK`** (thuộc nhóm 2xx).
+1. (a) **DNS resolve**: stub gửi recursive query tới resolver; resolver đi hỏi root → TLD `.com` → authoritative của `example.com` để lấy A/AAAA của `shop.example.com`. (b) **ALPN**: trong lúc TLS handshake, client gửi danh sách protocol hỗ trợ (`h3`, `h2`, `http/1.1`); server chọn cái phù hợp — thường là `h3` hoặc `h2` nếu client hỗ trợ. (c) **TLS handshake**: client xác thực certificate của server và thỏa thuận session key. Với **HTTP/3 (QUIC)**, bước (c) được **gộp** với bước thiết lập kết nối UDP thay vì tách rời như TCP + TLS 1.3 — chỉ tốn 1 RTT (hoặc 0-RTT nếu resume phiên); HTTP/2 tốn 1 RTT cho TCP + 1 RTT cho TLS = 2 RTT trước khi HTTP request đi được.
 
-2. Vì **MX record** cho biết hostname của mail server chịu trách nhiệm nhận thư cho domain `example.com`; nếu không tra MX, máy gửi không biết phải đẩy thư tới đâu. Sau khi phân giải MX ra hostname rồi tra tiếp **A/AAAA** để có IP, máy gửi mở kết nối **SMTP** tới **port 25** (relay giữa các MTA) để chuyển thư.
+2. Với thông báo push một chiều (server → user), **SSE** phù hợp hơn: đơn giản, auto-reconnect có sẵn, đi qua HTTP proxy/CDN như request thường. WebSocket là overkill vì không cần chiều ngược. HTTP/2 vs HTTP/3 không đổi lựa chọn: SSE là HTTP thường nên chạy trên bất kỳ phiên bản HTTP nào — chuyển từ H2 sang H3 chỉ **cải thiện hiệu năng** (connection migration cho mobile) mà không phải viết lại code SSE.
 
-3. (a) **SSH/SCP** qua **port 22** để đẩy file. (b) **SSH** qua **port 22** để đăng nhập xem log. (c) **HTTPS** qua **port 443** để phục vụ trang. Điểm chung về bảo mật: cả SSH (a/b) và HTTPS/TLS (c) đều **mã hóa dữ liệu trên đường truyền và xác thực phía server**, nên thông tin đăng nhập và nội dung không bị lộ — khác hẳn FTP/HTTP thuần vốn truyền plaintext.
+3. Vấn đề: bundle không có hash trong tên (`app.js`), và `Cache-Control: max-age=86400` khiến browser và CDN cache 24 giờ; deploy đổi nội dung nhưng URL vẫn giống, cache không biết đã có bản mới, nên serve bản cũ tới 24 giờ. Pattern: **thêm hash trong tên file** (`app.a3f2c891.js`) + `immutable, max-age=1y`; HTML gốc thì `no-cache` hoặc `max-age=0` để browser luôn kiểm tra. **Tương đồng với DNS TTL**: cả hai đều là "cam kết dữ liệu không đổi trong X thời gian" — TTL DNS cao giúp giảm truy vấn nhưng làm chậm việc thay IP; `max-age` cao giúp giảm request nhưng làm chậm việc thay nội dung. Kỹ thuật xử lý cũng giống: đổi định danh (URL với hash, hostname mới) thay vì chờ TTL/max-age hết.
 
-4. (a) **Không** cần truy vấn DNS lại: bản ghi A có TTL `300` giây mà mới qua `200` giây, nên kết quả vẫn còn hợp lệ trong cache của resolver/hệ điều hành. (b) **Có thể** dùng lại nội dung trang vì `max-age=600` cho phép cache `600` giây, mới qua `200` giây nên còn "tươi". Khi cache hết hạn, thay vì tải lại toàn bộ, trình duyệt có thể gửi request kiểm tra điều kiện; nếu nội dung không đổi, server trả **`304 Not Modified`** để trình duyệt tái sử dụng bản cũ, tiết kiệm băng thông.
+4. (a) **Bật cả HTTP/2 và HTTP/3** ở CDN; browser tự chọn (thường ưu tiên H3, fallback H2 nếu UDP bị chặn). (b) Chiến lược cache: **HTML gốc** — `Cache-Control: no-cache` hoặc `max-age=0, must-revalidate`; browser luôn hỏi lại (dùng ETag để tiết kiệm băng thông khi chưa đổi) — cần cập nhật kịp thời để trỏ tới bundle mới. **Asset tĩnh** — pattern hash trong tên + `public, max-age=31536000, immutable`; CDN cache tối đa, browser cũng cache mãi, deploy đổi hash → URL khác. **API response cá nhân hóa (giỏ hàng)** — `Cache-Control: private, no-store` (hoặc `private, max-age=0`); tuyệt đối không cache ở CDN, chỉ browser của chính user, và không bao giờ mix giữa user vì gắn với `Authorization`/session cookie.
 
 </details>

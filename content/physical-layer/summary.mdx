@@ -1,42 +1,37 @@
 # Tóm tắt Chương 2: Physical Layer
 
-Chương này đã đi xuống tận đáy ngăn xếp mạng để trả lời câu hỏi "bit thực sự di chuyển bằng cách nào". Dưới đây là các khái niệm chính theo từng bài, sau đó là bài tập ôn tập kết hợp nhiều bài.
+Chương này đã đi xuống tận đáy ngăn xếp mạng để trả lời câu hỏi "bit thực sự di chuyển bằng cách nào" — nhưng dưới góc nhìn của developer, phần đáng nhớ nhất là bandwidth, latency và RTT.
 
 ## Các khái niệm chính
 
 ### Môi trường truyền dẫn
 
 - Môi trường chia thành **guided** (copper, fiber optic) và **unguided** (wireless).
-- **Copper** rẻ và tiện nhưng nhạy **EMI** và giới hạn ~100 m; **fiber optic** dùng ánh sáng nên miễn nhiễm EMI, băng thông cao và đi rất xa nhưng đắt; **wireless** linh hoạt nhất nhưng kém ổn định và bắt buộc mã hóa.
-- Chọn môi trường là bài toán đánh đổi giữa bandwidth, khoảng cách, chi phí và khả năng chịu nhiễu (xem bảng so sánh).
-
-### Mã hóa & tín hiệu
-
-- **Encoding** biến bit thành tín hiệu và phải lo thêm **clock recovery** cùng **DC balance**; **NRZ** đơn giản nhưng kém đồng bộ, **Manchester** tự đồng bộ nhưng tốn gấp đôi băng thông, **4B/5B** chỉ tốn thêm 25%.
-- **Baseband** dùng cả băng thông cho một tín hiệu số; **broadband** chia thành nhiều kênh tần số.
-- `bit rate = baud rate × log2(M)`: baud đếm symbol, bit rate đếm bit, chỉ bằng nhau khi mỗi symbol mang 1 bit.
+- **Copper** rẻ và tiện nhưng nhạy **EMI** và giới hạn ~100 m; **fiber optic** dùng ánh sáng nên miễn nhiễm EMI, băng thông cao và đi xa nhưng đắt; **wireless** linh hoạt nhất nhưng kém ổn định và bắt buộc mã hóa.
+- Chọn môi trường là bài toán đánh đổi giữa bandwidth, khoảng cách, chi phí và khả năng chịu nhiễu.
 
 ### Băng thông & hiệu năng
 
-- **Bandwidth** là dung lượng tối đa lý thuyết; **throughput** là tốc độ thực tế, bị giới hạn bởi **bottleneck link**.
-- **Latency** = tổng **transmission + propagation + queuing + processing delay**; tăng bandwidth chỉ giảm transmission delay.
-- **Attenuation** làm tín hiệu yếu dần theo khoảng cách và phụ thuộc môi trường, quyết định giới hạn chiều dài liên kết.
+- **Bandwidth** là dung lượng tối đa lý thuyết; **throughput** là tốc độ thực tế đạt được, bị giới hạn bởi **bottleneck link**.
+- **Latency** = tổng của **transmission + propagation + queuing + processing delay**; tăng bandwidth chỉ giảm transmission delay, không giảm propagation delay.
+- **RTT** (round-trip time) là thời gian đi và về; nó quyết định thời gian TCP handshake, TLS handshake, và các quyết định về timeout ứng dụng.
+- **Attenuation** làm tín hiệu yếu dần theo khoảng cách, phụ thuộc môi trường và quyết định giới hạn chiều dài liên kết.
 
 ## Bài tập ôn tập
 
-1. **(Lý thuyết — kết hợp "Môi trường truyền dẫn" + "Băng thông & hiệu năng")** Vì sao **single-mode fiber** cho phép liên kết dài hàng chục km còn **twisted pair** chỉ tới khoảng 100 m? Dùng khái niệm **attenuation** và bảng so sánh đặc tính môi trường để giải thích, đồng thời nêu một biện pháp khắc phục attenuation khi buộc phải đi xa trên copper.
+1. **(Lý thuyết — kết hợp "Môi trường truyền dẫn" + "Băng thông & hiệu năng")** Vì sao **single-mode fiber** cho phép liên kết dài hàng chục km còn **twisted pair** chỉ tới khoảng 100 m? Dùng khái niệm **attenuation** để giải thích, đồng thời nêu một biện pháp khắc phục khi buộc phải đi xa trên copper.
 
-2. **(Tính toán — kết hợp "Mã hóa & tín hiệu" + "Băng thông & hiệu năng")** Một liên kết Fast Ethernet 100BASE-TX dùng **4B/5B** chạy ở **125 Mbaud** (1 bit/symbol), cho **bit rate dữ liệu hữu ích 100 Mbps**. Bạn gửi một file **25 MB** (`= 200 × 10^6 bit`). Tính **transmission delay** dựa trên bit rate hữu ích, và giải thích vì sao phải dùng bit rate hữu ích (100 Mbps) chứ không phải tốc độ đường truyền (125 Mbps) trong phép tính này.
+2. **(Tính toán — kết hợp "Băng thông & hiệu năng")** Một liên kết có bandwidth **1 Gbps**, dài **10 000 km**, tốc độ lan truyền `2 × 10^8 m/s`. Tính **transmission delay** khi gửi một gói **1500 byte** và **propagation delay** một chiều. Với gói ping nhỏ này, RTT tối thiểu là bao nhiêu, và tăng bandwidth có giúp giảm RTT không?
 
-3. **(Tình huống — kết hợp "Môi trường truyền dẫn" + "Mã hóa & tín hiệu")** Một xưởng sản xuất có nhiều động cơ gây **EMI** mạnh, cần một liên kết **1 Gbps** dài **400 m** chạy ổn định. (a) Chọn môi trường truyền dẫn phù hợp và giải thích vì sao loại các phương án khác. (b) Nếu hệ thống cần truyền những đoạn dữ liệu có chuỗi bit giống nhau rất dài, vì sao một sơ đồ encoding tự đồng bộ (như Manchester hoặc 4B/5B) lại an toàn hơn NRZ-L? Liên hệ tới **clock recovery**.
+3. **(Tình huống — kết hợp "Băng thông & hiệu năng")** API của bạn phục vụ người dùng từ nhiều châu lục. Một request nhỏ (< 1 KB) đến từ Mỹ và một request tương tự từ Việt Nam đều đến cùng một server ở Singapore. Dựa vào các thành phần delay, giải thích vì sao request từ Mỹ luôn chậm hơn ~150 ms so với từ Việt Nam, dù server và mã ứng dụng giống nhau. Đề xuất một hướng thiết kế để giảm chênh lệch này (gợi ý: liên hệ sang Chương 6 — CDN).
 
 <details>
   <summary>Đáp án</summary>
 
-1. **Attenuation** (suy hao tín hiệu theo khoảng cách) ở copper lớn hơn nhiều so với fiber: tín hiệu điện trên twisted pair yếu nhanh nên qua ~100 m đã khó đọc đúng, trong khi xung ánh sáng trong single-mode fiber suy hao rất ít nên giữ được chất lượng qua hàng chục km — đúng như cột "khoảng cách" trong bảng so sánh phản ánh. Biện pháp khắc phục trên copper: chèn **repeater** để tái tạo lại tín hiệu về mức ban đầu trước khi nó yếu quá (hoặc đơn giản là chuyển sang fiber).
+1. **Attenuation** ở copper lớn hơn nhiều so với fiber: tín hiệu điện trên twisted pair yếu nhanh nên qua ~100 m đã khó đọc đúng, trong khi xung ánh sáng trong single-mode fiber suy hao rất ít nên giữ được chất lượng qua hàng chục km. Biện pháp khắc phục trên copper: chèn **repeater** để tái tạo lại tín hiệu về mức ban đầu trước khi nó yếu quá.
 
-2. `transmission delay = kích thước / bit rate hữu ích = 200 × 10^6 bit / 100 × 10^6 bps = 2 s`. Phải dùng **100 Mbps** vì trong 125 Mbit mã/giây trên đường truyền, cứ 5 bit chỉ có 4 bit là dữ liệu thật của người dùng (4B/5B); 25% còn lại là bit thừa để đồng bộ, không mang nội dung file. Tốc độ mà file "thực sự" được truyền là 100 Mbps.
+2. `transmission delay = 12 000 bit / 10^9 bps = 12 µs`. `propagation delay = 10^7 m / 2 × 10^8 m/s = 50 ms`. `RTT ≥ 2 × 50 = 100 ms` (đi và về, chưa kể queuing/processing). Tăng bandwidth chỉ giảm `transmission delay` (đã rất nhỏ với gói này); RTT chủ yếu là propagation, phụ thuộc khoảng cách và tốc độ ánh sáng — không cải thiện được bằng cách nâng bandwidth.
 
-3. (a) Chọn **fiber optic** (multi-mode đủ cho 400 m, 1 Gbps): nó **miễn nhiễm EMI** nên không bị nhiễu từ động cơ, lại vượt giới hạn ~100 m của UTP. Copper bị loại vì vừa nhạy EMI vừa không đủ tầm 400 m; wireless bị loại vì khó đảm bảo 1 Gbps ổn định và càng dễ nhiễu trong môi trường nhiều kim loại/động cơ. (b) Chuỗi bit giống nhau dài làm NRZ-L giữ một mức phẳng kéo dài, khiến đầu thu mất mốc thời gian và sai **clock recovery**. Manchester (đổi mức giữa mỗi bit) và 4B/5B (chèn bit để không có quá nhiều giá trị giống nhau liên tiếp) luôn tạo đủ chuyển mức để đầu thu giữ đồng bộ, nên an toàn hơn.
+3. Chênh lệch ~150 ms chủ yếu là **propagation delay**: Mỹ → Singapore khoảng cách vòng cáp quang xa hơn Việt Nam → Singapore nhiều lần. Vì propagation delay = khoảng cách / tốc độ lan truyền, khoảng cách vật lý quyết định mức trễ tối thiểu — không phần mềm nào rút ngắn được. **Hướng thiết kế**: đặt các **edge/CDN node** gần người dùng (Mỹ có node ở Mỹ, VN có node ở VN); người dùng nhận response từ node gần thay vì bay tới Singapore. Đây là ý tưởng CDN mà Chương 6 sẽ đi sâu.
 
 </details>

@@ -1,60 +1,78 @@
 # Tóm tắt Chương 7: Network Security
 
-Chương này đã chuyển từ góc nhìn "mạng hoạt động thế nào" sang "mạng bị tấn công và được bảo vệ ra sao". Ta đi từ các mối đe dọa, tới công cụ mã hóa bảo vệ dữ liệu, các lớp phòng thủ vành đai, và cuối cùng là nguyên tắc thiết kế gắn kết tất cả lại. Dưới đây là các khái niệm chính theo từng bài, sau đó là bài tập ôn tập kết hợp nhiều bài.
+Chương này chuyển từ "mạng hoạt động thế nào" sang "mạng bị tấn công và được bảo vệ ra sao". Dưới đây là các khái niệm chính theo từng bài, sau đó là bài tập ôn tập kết hợp nhiều bài.
 
 ## Các khái niệm chính
 
 ### Mối đe dọa mạng
 
-- Mọi tấn công nhắm vào **CIA triad** (confidentiality, integrity, availability).
-- **DDoS** dùng **botnet** làm cạn tài nguyên (ví dụ **SYN flood**) để phá availability; mitigation gồm rate limiting, SYN cookies, scrubbing/CDN.
-- **MITM** lén đứng giữa (ví dụ **ARP spoofing**) để đọc/sửa dữ liệu; chống đỡ bằng **encryption + authentication**.
-- **Spoofing** làm giả trường định danh (IP/MAC/DNS/email); mitigation chung là **xác thực nguồn gốc** (BCP 38, DNSSEC, SPF/DKIM/DMARC).
+- Mọi tấn công nhắm vào **CIA triad**: confidentiality, integrity, availability.
+- **DDoS** dùng **botnet** cạn tài nguyên (ví dụ **SYN flood**); mitigation: rate limiting, SYN cookies, scrubbing/CDN.
+- **MITM** lén đứng giữa; chống đỡ bằng **encryption + authentication**. **Spoofing** làm giả trường định danh; mitigation là **xác thực nguồn gốc** (BCP 38, DNSSEC, SPF/DKIM/DMARC).
 
 ### Mã hóa
 
-- **Symmetric encryption** dùng cùng một khóa, nhanh, nhưng vướng **key distribution** (ví dụ AES).
-- **Asymmetric encryption** dùng cặp public/private key, giải được key distribution và cho phép **digital signature** (ví dụ RSA/ECC), nhưng chậm.
-- **TLS handshake** kết hợp cả hai: bất đối xứng để xác thực qua **certificate** (do **CA** ký) và thỏa thuận **session key**, đối xứng cho dữ liệu; TLS 1.3 thêm **forward secrecy**.
+- **Symmetric** (AES): một khóa chung, nhanh, vướng key distribution.
+- **Asymmetric** (RSA/ECC): cặp public/private key, giải được key distribution, cho phép chữ ký số, nhưng chậm.
+- **TLS handshake** kết hợp cả hai: asymmetric để xác thực qua certificate và thỏa thuận session key, symmetric cho dữ liệu; TLS 1.3 thêm **forward secrecy**.
+
+### Certificate trong thực tế
+
+- Cert X.509 chứa **Subject/SAN**, **Issuer**, **Validity**, **Public Key**. Browser hiện đại match hostname với **SAN**, không phải CN.
+- Server phải gửi **chuỗi đầy đủ** (leaf + intermediate); root nằm sẵn trong **trust store**.
+- **Let's Encrypt** cấp cert 90 ngày miễn phí qua **ACME** với challenge **HTTP-01** hoặc **DNS-01** (DNS-01 hỗ trợ wildcard); ép tự động hóa renew, reload, monitor.
+- **Certificate Transparency** log giúp phát hiện cert bất thường; ba lỗi phổ biến: hết hạn, hostname mismatch, thiếu chuỗi.
+
+### Web security: CORS, cookies & CSRF
+
+- **Same-Origin Policy** cấm JS đọc dữ liệu cross-origin (không cấm gửi request).
+- **CORS** mở SOP có kiểm soát qua `Access-Control-*` header; bảo vệ user trên browser, không bảo vệ server.
+- Cookie an toàn: **`HttpOnly`** (chặn XSS đọc), **`Secure`** (chỉ qua HTTPS), **`SameSite=Lax`** (chặn CSRF cổ điển).
+- **CSRF** chặn bằng ba lớp: `SameSite`, CSRF token, kiểm `Origin` header. Security headers: **HSTS**, **CSP**, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`.
 
 ### Phòng thủ vành đai
 
-- **Firewall**: **stateless** xét từng gói độc lập (ACL); **stateful** theo dõi connection table và tự cho lưu lượng trả về của kết nối hợp lệ.
-- **VPN** kết hợp **tunneling + encryption** tạo đường an toàn qua Internet; use case **remote-access** và **site-to-site**.
-- **NAC/802.1X** kiểm soát thiết bị ngay tại cổng với ba vai trò supplicant – authenticator – authentication server (RADIUS).
+- **Firewall**: **stateless** (ACL, xét từng gói) so với **stateful** (theo dõi connection, cho phép lưu lượng trả về).
+- **VPN**: tunneling + encryption cho remote-access hoặc site-to-site.
+- **NAC/802.1X**: kiểm soát thiết bị ngay tại cổng với supplicant – authenticator – authentication server (RADIUS).
 
 ### Thiết kế mạng an toàn
 
-- **Defense in depth**: nhiều lớp độc lập, không một điểm thất bại đơn lẻ làm sập hệ thống.
-- **Least privilege**: chỉ cấp quyền tối thiểu (RBAC, security group) để thu hẹp attack surface.
-- **Network segmentation**: chia vùng (VLAN/subnet, DMZ) chặn di chuyển ngang; **zero trust** đẩy xa hơn với "never trust, always verify" và micro-segmentation.
+- **Defense in depth**: nhiều lớp độc lập.
+- **Least privilege**: quyền tối thiểu.
+- **Network segmentation** + **DMZ**: chia vùng chặn di chuyển ngang.
+- **Zero trust**: never trust, always verify; micro-segmentation.
 
 ## Bài tập ôn tập
 
-1. **(Lý thuyết — kết hợp "Mối đe dọa mạng" + "Mã hóa")** Giải thích vì sao một kênh được bảo vệ bằng **TLS** (với certificate hợp lệ) lại vô hiệu hóa cả việc nghe lén lẫn việc sửa dữ liệu trong tấn công **MITM**. Trong câu trả lời, chỉ rõ phần **asymmetric** lo việc gì và phần **symmetric** lo việc gì.
+1. **(Lý thuyết — kết hợp "Mối đe dọa mạng" + "Mã hóa" + "Certificate trong thực tế")** Kịch bản MITM cổ điển: attacker trên Wi-Fi công cộng cố intercept HTTPS. Giải thích vì sao TLS + certificate hợp lệ vô hiệu hóa attack này. Trong lỗi hệ thống thực tế, attacker có thể lợi dụng những gì (hết hạn cert, chấp nhận CA nội bộ, người dùng bỏ qua cảnh báo)? Với mỗi vector, đề xuất một biện pháp phòng thủ.
 
-2. **(Tình huống — kết hợp "Mối đe dọa mạng" + "Phòng thủ vành đai")** Một web server đang hứng **SYN flood** và đồng thời có người cố SSH dò mật khẩu từ nhiều IP lạ. Hãy đề xuất biện pháp cho từng vấn đề: dùng cơ chế nào ở tầng TCP để giảm SYN flood, và viết ý tưởng rule **stateful firewall** để chỉ cho phép SSH từ dải quản trị `203.0.113.0/24`.
+2. **(Tình huống — kết hợp "Web security: CORS, cookies & CSRF" + "Certificate trong thực tế")** Bạn xây API bán hàng. Người dùng đăng nhập ở `https://shop.example.com`; API ở `https://api.shop.example.com` dùng cookie phiên. (a) Cookie phải có những attribute nào? (b) Cần CORS cấu hình gì để API cho phép SPA gọi kèm credential? (c) Nếu bạn dùng Let's Encrypt và có `shop.example.com` + `api.shop.example.com`, đề xuất chiến lược cert (một cert nhiều SAN hay wildcard `*.example.com`)?
 
-3. **(Tình huống thực tế — kết hợp "Thiết kế mạng an toàn" + "Phòng thủ vành đai" + "Mối đe dọa mạng")** Thiết kế lại một mạng phẳng gồm web server, database và máy nhân viên theo **segmentation** và **least privilege**. Giải thích nếu web server bị chiếm (qua một lỗ hổng) thì **DMZ** và firewall giữa các zone giúp giới hạn thiệt hại ra sao, và đây là biểu hiện của nguyên tắc thiết kế nào.
+3. **(Tình huống thực tế — kết hợp "Web security" + "Thiết kế mạng an toàn")** Một team đang đề xuất tắt CSP để không phải sửa các `unsafe-inline` script, và tắt CSRF token vì "đã có `SameSite=Lax`". Bạn phản bác dựa trên nguyên tắc **defense in depth**: nêu kịch bản nào cần đến CSP dù đã có `HttpOnly`, và kịch bản nào cần CSRF token dù đã có `SameSite=Lax`.
 
-4. **(Phân tích — kết hợp "Mã hóa" + "Thiết kế mạng an toàn")** Một hệ thống lưu dữ liệu nhạy cảm dưới dạng plaintext trong database nhưng tự tin vì "đã có firewall ở biên". Dựa trên **defense in depth** và vai trò của **encryption**, hãy chỉ ra lỗ hổng trong lập luận này và đề xuất cải thiện.
+4. **(Tình huống — kết hợp "Certificate trong thực tế" + "Mã hóa")** Bạn deploy một service internal dùng cert tự ký của công ty. Frontend web hoạt động sau khi cài root CA vào browser, nhưng backend Go gọi service internal đó qua `https://` báo lỗi "unknown authority". Chẩn đoán và đề xuất hai cách khác nhau để khắc phục (một tạm thời, một sạch sẽ về mặt bảo mật).
 
 <details>
   <summary>Đáp án</summary>
 
-1. TLS dùng phần **asymmetric** để **xác thực server qua certificate** (kẻ MITM không có private key tương ứng với domain nên không mạo danh được) và để **thỏa thuận an toàn một session key**. Sau đó phần **symmetric** mã hóa toàn bộ dữ liệu bằng session key đó, nên kẻ ở giữa không đọc được (mất confidentiality bị chặn) và mọi sửa đổi đều bị phát hiện nhờ kiểm tra toàn vẹn (mất integrity bị chặn). Vì không qua được bước xác thực, kẻ tấn công thậm chí không chen vào được kênh.
+1. **TLS + cert hợp lệ chặn MITM**: browser xác thực server thật (không phải attacker) qua certificate được CA tin cậy ký; attacker không có private key tương ứng nên không mạo danh được. Kênh sau đó mã hóa nên attacker cũng không đọc/sửa dữ liệu được. **Vector attacker có thể lợi dụng**: (a) **cert hết hạn hoặc bị revoke** — user thấy cảnh báo và có thể bỏ qua ⇒ dạy user không bỏ qua cảnh báo cert, monitor thời hạn và tự động renew. (b) **CA nội bộ được cài vào máy user** (ví dụ do phần mềm bảo mật doanh nghiệp) — attacker có thể ký cert giả nếu chiếm được CA nội bộ ⇒ dùng **certificate pinning** cho app mobile, hoặc **HPKP/CT log monitoring** để phát hiện cert lậu cấp cho domain của mình. (c) **User bấm "proceed anyway"** — trên trang nhạy cảm nên bật **HSTS** để browser không cho bypass cảnh báo cert.
 
-2. **SYN flood**: bật **SYN cookies** để server không cấp phát trạng thái cho tới khi handshake hoàn tất, kèm rate limiting. **SSH brute-force**: dùng **stateful firewall** với default-deny và chỉ mở SSH cho dải quản trị, ví dụ:
+2. (a) Cookie phiên cần **`HttpOnly`** (chống XSS đọc), **`Secure`** (chỉ HTTPS), **`SameSite=Lax`** (chống CSRF), **`Domain=.example.com`** để dùng chung giữa `shop.example.com` và `api.shop.example.com`. (b) CORS: response từ API phải có `Access-Control-Allow-Origin: https://shop.example.com` (**không** `*` vì có credential), `Access-Control-Allow-Credentials: true`, và trả preflight OK cho method + header cần dùng; client fetch phải kèm `credentials: "include"`. (c) Với hai subdomain thì **cert nhiều SAN** (`shop.example.com` + `api.shop.example.com`) là đủ và đơn giản (HTTP-01 challenge OK). Nếu bạn dự kiến thêm subdomain thường xuyên (`admin.`, `blog.`), **wildcard `*.example.com`** tiện hơn — nhưng phải dùng DNS-01 challenge, và một cert compromise thì toàn bộ subdomain lộ; nên trade-off.
 
-   ```bash
-   iptables -P INPUT DROP
-   iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-   iptables -A INPUT -p tcp -s 203.0.113.0/24 --dport 22 -j ACCEPT
-   iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+3. **CSP dù có `HttpOnly`**: `HttpOnly` chỉ chặn XSS **đọc cookie**, không chặn XSS thực hiện các hành động khác trong trang: đánh cắp form input, chuyển tiền qua request kèm cookie tự động, đọc/exfiltrate DOM. CSP chặn script từ nguồn lạ chạy ngay từ đầu, giảm bề mặt XSS. Bỏ CSP = giao mọi lỗ hổng inject có sẵn (hoặc sắp có) cho attacker. **CSRF token dù có `SameSite=Lax`**: `Lax` không gửi cookie cho POST cross-site nhưng **có gửi cho top-level navigation GET** — nếu API có endpoint dạng `GET /transfer?to=...&amount=...` (bad practice nhưng vẫn tồn tại), CSRF vẫn khả thi. Ngoài ra `SameSite=None` (cần cho một số iframe/embed) tắt hẳn chống CSRF cấp cookie. Defense in depth: hai lớp độc lập chi phí rất nhỏ mà chặn được cả bug cấu hình lẫn edge case.
+
+4. Nguyên nhân: Go's TLS library kiểm certificate với **system trust store** hoặc CA pool được nạp trong code; nếu root CA nội bộ chưa được nạp vào Go program, cert do CA đó ký không xác thực được (lỗi "unknown authority"). Browser thì đã có root CA nội bộ do người ta cài vào OS. **Cách tạm thời** (nhanh, không an toàn): đặt `tls.Config{InsecureSkipVerify: true}` để Go bỏ qua kiểm — được cho test, không được cho prod vì mất hẳn xác thực server. **Cách sạch**: nạp root CA nội bộ vào cert pool của Go trước khi gọi:
+
+   ```go
+   rootCAs, _ := x509.SystemCertPool()
+   pem, _ := os.ReadFile("/etc/ssl/internal-ca.pem")
+   rootCAs.AppendCertsFromPEM(pem)
+   client := &http.Client{Transport: &http.Transport{
+       TLSClientConfig: &tls.Config{RootCAs: rootCAs},
+   }}
    ```
 
-3. Đặt **web server trong DMZ**, **database ở zone riêng hạn chế cao** (chỉ nhận kết nối từ web server đúng port DB), **máy nhân viên ở VLAN/subnet riêng**. Firewall giữa các zone chỉ mở đúng vài port cần thiết. Nếu web server bị chiếm, kẻ tấn công vẫn bị chặn không nhảy thẳng vào database hay mạng nhân viên — chính là **network segmentation** kết hợp **least privilege** (áp cho luồng mạng), và là một lớp của **defense in depth**.
-
-4. Lỗ hổng: lập luận này đặt cược toàn bộ vào **một lớp** (firewall biên), trái với **defense in depth**. Nếu firewall bị cấu hình sai, hoặc kẻ tấn công vào được qua lỗ hổng ứng dụng (SQL injection) hay tài khoản bị lộ, thì dữ liệu plaintext bị đọc trực tiếp. Cải thiện: **mã hóa dữ liệu khi lưu trữ (at rest) và khi truyền (in transit)**, áp **least privilege** cho tài khoản DB, và thêm các lớp khác (segmentation, giám sát) để dù một lớp thủng thì dữ liệu vẫn được bảo vệ.
+   Giữ nguyên xác thực chuỗi cert, chỉ mở rộng danh sách CA tin cậy.
 
 </details>

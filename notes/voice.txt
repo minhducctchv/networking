@@ -395,3 +395,136 @@ Now, your homework. Listen to this episode again. Write the new words in your no
 Thank you for listening. See you in episode two. Bye-bye!
 
 [OUTRO MUSIC FADES OUT]
+
+# Mạng máy tính là gì?
+
+Podcast: What is a Computer Network? — Easy English for Beginners
+
+Hello, friends! Welcome back to the show. Today is a good day to learn English. It is also a good day to learn about computers.
+
+Today, we answer three big questions. One: what is a computer network? Two: what is a protocol? Three: why do we use layers?
+
+Do not worry. I will speak slowly. I will use easy words. Are you ready? Let's start.
+
+Part 1: What is a Computer Network?
+
+First, a simple question. What is a computer network?
+
+A computer network is a group of devices. Two devices. Three devices. Or many, many devices. They connect. They send data. They share things.
+
+For example, look at your phone. Look at your laptop. They can send messages. They can share files. That is a small network.
+
+We have two special words for these devices. The first word is "host." The second word is "node." A host is a device on the network. A node is a point on the network. The two words mean almost the same thing.
+
+A host can be many things. A host can be a computer. A host can be a phone. A host can be a server. A host can also be a smart thing. For example, a smart light. Or a smart camera. We call these "IoT devices."
+
+Now, a network needs three parts. Three parts. Please listen.
+
+Part one: end systems. An end system is a device. The device makes data. Or the device uses data. For example, your laptop is an end system. A web server is an end system too.
+
+Part two: a medium. A medium is the path for data. Data moves on this path. A medium can be a copper cable. A medium can be a fiber cable. A medium can also be a radio signal, like Wi-Fi.
+
+Part three: middle devices. Middle devices help to move data. A switch is a middle device. A router is a middle device. They send data to the right place.
+
+Why do we use a network? The answer is easy. We use a network to share.
+
+We share data. For example, we send a file. Or we open a web page.
+
+We share resources. For example, we use one printer for many people. Or we use a network drive.
+
+We share services. For example, we log in to an app. Or we pay online.
+
+The main idea is simple. A network lets one device use things on another device. That is all.
+
+Part 2: What is a Protocol?
+
+Now, part two. What is a protocol?
+
+A protocol is a set of rules. Rules for talking. Two devices use these rules. Then they can understand each other.
+
+Let me give you an example. Your computer sends some bits to my computer. Just zeros and ones. But my computer does not know. Which bit is the address? Which bit is the data? When can I answer? Without rules, my computer is lost.
+
+So, a protocol is like a common language. It helps two devices work together.
+
+A protocol has three parts. Three parts. Listen well.
+
+One: syntax. Syntax is the form. It is the order of the fields in the message. It is like the shape of a letter.
+
+Two: semantics. Semantics is the meaning. What does this field say? What action do I do?
+
+Three: timing. Timing is about time. When do I send? How fast do I send?
+
+Here is a nice picture. A protocol is like a handshake. Two people meet. Person A holds out a hand. Person B shakes the hand. Now they can talk. But if one person does not shake, the meeting fails. It is the same with computers. Two computers need the same protocol. If not, they do not understand each other.
+
+Let's see a real example. When you open a web page, your browser talks to a web server. They use a protocol called HTTP.
+
+The browser sends a message. It says: "GET slash index dot html, HTTP one point one." This is a request. The browser wants a file.
+
+Then, the server sends a message back. It says: "HTTP one point one, two hundred, OK." This is a response. Two hundred means "found it." Then the server sends the page.
+
+Both sides use the same protocol. So they understand every line. That is the magic of a protocol.
+
+Part 3: Why do we use Layers?
+
+Now, part three. Why do we use layers?
+
+A network job is not simple. Many things happen. Electric signals move on wires. We need to find errors. We need addresses. We need to find the way. We need to show the app. Many, many jobs.
+
+So we cut the big job into small parts. Each small part is a "layer." A layer is a group of jobs that go together.
+
+Each layer has one goal. Each layer helps the layer above. Each layer uses the layer below. Simple, right?
+
+We have five main layers. From top to bottom:
+
+One. The Application layer. This layer is for apps. Web, email, chat.
+
+Two. The Transport layer. This layer sends data to the right app.
+
+Three. The Network layer. This layer finds the way. It uses addresses.
+
+Four. The Data Link layer. This layer moves data on one small step.
+
+Five. The Physical layer. This layer turns bits into signals.
+
+Why do we use layers? Three good reasons.
+
+One: modularity. We can change one layer. But the other layers are okay. For example, we can change from Wi-Fi to a cable. The apps above still work. Nice, right?
+
+Two: interoperability. Many companies make devices. But they all follow the same rules between layers. So the devices from different companies can work together.
+
+Three: easy to learn, easy to fix. When there is a problem, we can find the layer. Is it a cable problem? Is it an app problem? We can guess faster.
+
+One key idea. Each layer talks to the same layer on the other computer. It is like a direct line. But in real life, the data goes down all layers first. Then it moves to the other side. Then it goes up all layers again.
+
+Part 4: Quick Summary
+
+OK, friends. Time to review. Time for a quick summary.
+
+One. A computer network is a group of devices. Devices share data, resources, and services. A network needs end systems, a medium, and middle devices.
+
+Two. A protocol is a set of rules. It has syntax, semantics, and timing. It is like a language. Both sides need the same protocol.
+
+Three. We use layers to cut the big job into small parts. Layers give us modularity, interoperability, and easy fixing.
+
+Part 5: Goodbye
+
+That is all for today. Good job, friend! You learned three big ideas: network, protocol, and layers.
+
+Please listen to this episode again. Say the new words. Say them out loud. Slow is OK. Slow is good for learning.
+
+New words for today. Listen and repeat.
+
+Network.
+Host.
+Node.
+End system.
+Medium.
+Protocol.
+Syntax.
+Semantics.
+Timing.
+Layer.
+
+One more time, slowly. Network. Host. Node. End system. Medium. Protocol. Syntax. Semantics. Timing. Layer.
+
+Thank you for listening. See you in the next episode. Bye-bye!

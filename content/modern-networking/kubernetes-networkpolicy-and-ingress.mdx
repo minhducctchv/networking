@@ -1,0 +1,296 @@
+import { Callout } from "nextra/components";
+
+# Kubernetes NetworkPolicy & Ingress
+
+Bài **Container Networking** đã trình bày mô hình "Pod-to-Pod không NAT" và Service/ClusterIP. Nhưng hai câu hỏi thực tế còn để ngỏ: **làm sao chặn Pod A gọi Pod B nếu không được phép** (mạng mặc định của Kubernetes cho mọi Pod nói chuyện với mọi Pod, quá mở đối với zero trust), và **làm sao lộ dịch vụ ra Internet mà không phải mở nhiều LoadBalancer** cho mỗi service. Bài này trả lời qua hai đối tượng: **NetworkPolicy** cho traffic đông-tây, và **Ingress/Gateway API** cho traffic vào từ ngoài.
+
+## Mặc định: mọi Pod nói chuyện được với mọi Pod
+
+Kubernetes bắt mọi Pod có IP duy nhất và **không NAT giữa các Pod** — đây là mô hình "flat network" đã học. Hệ quả tiện: bất kỳ Pod nào cũng gọi được bất kỳ Pod nào khác chỉ với IP hoặc DNS. Hệ quả bất tiện: **không có tường ngăn giữa các Pod**. Một service bị chiếm có thể lateral-move tới mọi service khác trong cluster.
+
+Kubernetes không tự giải quyết chuyện này — nó chỉ định nghĩa **NetworkPolicy** như một khai báo, và **CNI plugin** (Calico, Cilium, Weave...) là bên thực thi. Nếu CNI của bạn không hỗ trợ NetworkPolicy, khai bao nhiêu YAML cũng vô ích. Kiểm nhanh:
+
+```bash
+# Với Calico
+$ kubectl get pods -n kube-system -l k8s-app=calico-node
+```
+
+## NetworkPolicy: firewall khai báo cho Pod
+
+**NetworkPolicy** là một resource Kubernetes khai báo "Pod nào được nói chuyện với Pod nào". Nó thực thi ở tầng **L3/L4** (IP + port), không hiểu HTTP. Chọn Pod bằng **label selector**, giống mọi resource Kubernetes khác.
+
+Một policy điển hình cho zero-trust namespace: **mặc định cấm mọi traffic**, rồi mở từng luồng cụ thể.
+
+```yaml
+# Bước 1: default deny — cấm mọi traffic vào Pod trong namespace prod
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: prod
+spec:
+  podSelector: {}          # áp cho MỌI Pod trong namespace
+  policyTypes:
+    - Ingress
+```
+
+Chỉ đặt policy này thôi là mọi Pod trong `prod` không nhận được request từ bất kỳ đâu. Bây giờ mở dần:
+
+```yaml
+# Bước 2: cho phép frontend gọi tới backend port 8080
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-to-backend
+  namespace: prod
+spec:
+  podSelector:
+    matchLabels:
+      app: backend         # policy này áp cho các Pod label app=backend
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: frontend
+      ports:
+        - protocol: TCP
+          port: 8080
+```
+
+Ngữ nghĩa: "Pod có label `app: backend` chỉ nhận traffic TCP port 8080 từ Pod có label `app: frontend`; mọi nguồn khác đều bị chặn". Đây chính là **least privilege** cho traffic (Chương 7).
+
+### Ingress vs Egress
+
+NetworkPolicy có hai chiều tách biệt:
+
+- **Ingress**: kiểm soát traffic **đi vào** Pod được chọn.
+- **Egress**: kiểm soát traffic **đi ra** từ Pod được chọn.
+
+Ví dụ Egress: bắt backend chỉ được gọi ra ngoài tới database và DNS:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-egress
+  namespace: prod
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: database
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:                              # DNS: cho gọi kube-dns
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+```
+
+Nếu quên rule DNS thì Pod không resolve được tên và mọi thứ vỡ — bẫy phổ biến khi mới dùng NetworkPolicy strict.
+
+<Callout type="warning">
+  NetworkPolicy hoạt động ở **L3/L4** (IP + port). Muốn kiểm soát theo **method
+  HTTP** hoặc **path** (chỉ cho GET, chặn DELETE) hoặc theo **identity của
+  workload**, cần **service mesh** ở bài trước. Hai công cụ bổ trợ chứ không thay
+  thế nhau.
+</Callout>
+
+## Ingress: một entry point cho nhiều service
+
+Kubernetes có ba cách lộ service ra ngoài cluster:
+
+- **NodePort** — mở một port (30000-32767) trên mọi node. Đơn giản nhưng port lạ, không tự cân bằng tải.
+- **LoadBalancer** — mỗi Service xin một LB của cloud provider (AWS ELB, GCP LB). Mạnh nhưng tốn tiền (một LB thật cho mỗi service).
+- **Ingress** — một entry point HTTP/HTTPS chung cho **nhiều service**, route theo hostname + path.
+
+Với dev đang chạy web app: bạn muốn `api.example.com` đi vào service `api`, `admin.example.com` đi vào service `admin`, cùng qua một địa chỉ IP public. Đó chính là việc của Ingress.
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web
+  namespace: prod
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: ["api.example.com", "admin.example.com"]
+      secretName: web-tls
+  rules:
+    - host: api.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 80
+    - host: admin.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: admin
+                port:
+                  number: 80
+```
+
+Ingress không tự làm gì — nó chỉ là khai báo. **Ingress controller** là phần mềm thật sự đọc Ingress resource và cấu hình một reverse proxy (nginx, HAProxy, Traefik, Envoy). Các controller phổ biến:
+
+- **ingress-nginx** (do Kubernetes community bảo trì, dùng nginx).
+- **Traefik** (viết bằng Go, có auto-discovery và ACME tích hợp).
+- **Envoy-based** như Contour, Emissary — hỗ trợ HTTP/2, gRPC tốt hơn.
+
+Bạn chọn một controller, cài nó (Helm chart hoặc manifest), rồi controller đó tự cấu hình proxy dựa trên Ingress resource bạn tạo.
+
+### TLS termination và cert-manager
+
+Ingress thường lo **TLS termination** (giải mã HTTPS tại biên cluster, giao HTTP trong nội bộ). Cert được lưu trong Kubernetes Secret dạng `kubernetes.io/tls`. Tự động hóa qua **cert-manager** — controller cài trong cluster, tự xin cert từ Let's Encrypt qua ACME (đã học Chương 7) và tự update Secret trước khi hết hạn:
+
+```yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@example.com
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+```
+
+Sau khi cluster có `ClusterIssuer` và Ingress có annotation `cert-manager.io/cluster-issuer`, cert-manager thấy Ingress, xin cert, tạo Secret, controller reload — tất cả tự động.
+
+## Gateway API: kế thừa của Ingress
+
+Ingress được thiết kế cho HTTP đơn giản; mở rộng cho gRPC, WebSocket, hay routing phức tạp phải qua annotation không chuẩn — mỗi controller có annotation riêng, khó port. **Gateway API** là chuẩn thay thế (đã stable từ 2023), tách vai trò rõ ràng:
+
+- **GatewayClass** (do cluster admin cài, xác định controller nào).
+- **Gateway** (do platform team dựng, khai listener + TLS).
+- **HTTPRoute/GRPCRoute/TCPRoute** (do dev team tạo, route traffic vào service của họ).
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: api-routes
+spec:
+  parentRefs:
+    - name: main-gateway
+  hostnames: ["api.example.com"]
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /users
+      backendRefs:
+        - name: user-service
+          port: 80
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /orders
+      backendRefs:
+        - name: order-service
+          port: 80
+          weight: 90
+        - name: order-service-v2
+          port: 80
+          weight: 10                # canary 10% sang v2
+```
+
+Gateway API hỗ trợ **traffic weighting native** (canary không cần annotation kỳ quái), **header/method matching phong phú**, và một loạt route type ngoài HTTP. Nếu bắt đầu dự án mới, cân nhắc Gateway API thay vì Ingress; hầu hết Ingress controller lớn đã hỗ trợ cả hai.
+
+<Callout type="info">
+  **Cho dev**: Ingress vẫn phổ biến nhất và đủ cho hầu hết trường hợp. Gateway
+  API mạnh hơn nhưng phức tạp hơn; đáng chuyển khi bạn cần multi-team routing
+  hoặc canary/traffic split ở tầng ingress mà không muốn kéo service mesh vào.
+</Callout>
+
+## Kết hợp NetworkPolicy + Ingress + Service Mesh
+
+Ba lớp bổ trợ nhau:
+
+- **Ingress/Gateway** ở biên: TLS termination, hostname/path routing từ Internet vào cluster.
+- **NetworkPolicy** trong cluster: firewall L3/L4 giữa các Pod, chặn lateral movement.
+- **Service mesh** trong cluster: mTLS xác thực identity, retry, canary, observability giữa các service.
+
+Kịch bản zero-trust chuẩn cho cluster production:
+
+```mermaid
+flowchart TD
+    Internet["Internet"] --> IN["Ingress + TLS (Let's Encrypt)"]
+    IN --> FE["frontend Pod"]
+    FE -.NetworkPolicy allow.-> BE["backend Pod"]
+    BE -.NetworkPolicy allow.-> DB["database Pod"]
+    Mesh["Service Mesh mTLS<br/>xác thực identity + retry + metric"] -.- FE
+    Mesh -.- BE
+    Mesh -.- DB
+    DeniedPod["random pod<br/>không có label được cho phép"] -.NetworkPolicy deny.->|"bị chặn"| BE
+```
+
+## Tóm tắt nhanh
+
+- Kubernetes mặc định **mọi Pod nói chuyện được**; **NetworkPolicy** khai báo firewall L3/L4 cho từng Pod, do **CNI plugin** thực thi.
+- Pattern chuẩn: **default deny** rồi mở rules cụ thể theo label selector; nhớ mở **Egress DNS** khi strict.
+- **Ingress** cung cấp một entry point HTTP/HTTPS cho nhiều service qua hostname + path; **Ingress controller** (nginx, Traefik, Envoy-based) mới thực sự chạy proxy.
+- **cert-manager** tự động hóa cert Let's Encrypt cho Ingress qua ACME.
+- **Gateway API** là chuẩn mới thay thế Ingress, tách vai trò rõ ràng, hỗ trợ traffic split + header matching native.
+- Ba lớp bổ trợ: **Ingress** ở biên, **NetworkPolicy** L3/L4 trong cluster, **service mesh** cho L7 + identity.
+
+## Bài tập
+
+### Câu hỏi lý thuyết
+
+1. Vì sao chỉ khai NetworkPolicy YAML là chưa đủ để chặn traffic giữa các Pod? Nêu vai trò của **CNI plugin** và cách kiểm nhanh CNI đang dùng có hỗ trợ NetworkPolicy không.
+2. So sánh **NetworkPolicy** với **AuthorizationPolicy** của Istio (service mesh, bài trước). Trong tình huống nào bạn dùng NetworkPolicy, tình huống nào cần cả service mesh?
+
+### Bài tập tình huống
+
+3. Bạn cần lộ 3 service (`api`, `admin`, `docs`) qua HTTPS với 3 hostname khác nhau, dùng chung một địa chỉ IP public để tiết kiệm chi phí LB. Viết cấu trúc `Ingress` (không cần đầy đủ chi tiết, chỉ nêu các phần) và giải thích cách cert-manager sinh cert cho cả 3 hostname.
+
+### Phân tích
+
+4. Team của bạn đang bàn: "Chúng ta đã có Ingress với TLS, đủ an toàn rồi, không cần NetworkPolicy". Bạn phản bác dựa trên **defense in depth** (Chương 7): kịch bản gì có thể xảy ra sau khi kẻ tấn công vượt qua Ingress mà NetworkPolicy sẽ chặn?
+
+<details>
+  <summary>Đáp án & gợi ý</summary>
+
+1. Kubernetes chỉ định nghĩa **schema** của NetworkPolicy trong API server, không tự thực thi. Việc thực thi (chặn packet giữa các Pod) là của **CNI plugin** (Calico, Cilium, Weave...) — nó đọc NetworkPolicy resource và cấu hình iptables/eBPF trên các node. Nếu CNI không hỗ trợ (ví dụ Flannel bản không kèm add-on), NetworkPolicy chỉ là "trang trí". Kiểm bằng `kubectl get pods -n kube-system` xem có Calico/Cilium pod không, hoặc thử áp một default-deny và kiểm xem Pod có bị chặn thật không.
+
+2. **NetworkPolicy** hoạt động ở **L3/L4** (IP + port), chọn Pod bằng label — thực thi bởi CNI plugin, có sẵn không cần cài mesh. **AuthorizationPolicy** của Istio hoạt động ở **L7** (HTTP method, path, header) và theo **identity workload** (SPIFFE URI qua mTLS) — cần service mesh chạy. Dùng NetworkPolicy khi bạn cần firewall cơ bản (Pod A không được gọi Pod B, chỉ mở port 8080 v.v.); dùng cả mesh khi cần chính sách L7 ("Pod A chỉ được GET /public, không được DELETE"), verify identity theo cert thay vì IP, hoặc muốn mTLS tự động cho mọi call.
+
+3. Cấu trúc Ingress: một resource `Ingress` với 3 rule cho 3 hostname (`api.example.com`, `admin.example.com`, `docs.example.com`), mỗi rule trỏ vào service tương ứng ở port 80. Trong `spec.tls` liệt kê cả 3 hostname với một `secretName` chung (hoặc 3 secret riêng). Thêm annotation `cert-manager.io/cluster-issuer: letsencrypt-prod`. Cert-manager phát hiện Ingress mới có annotation → gọi Let's Encrypt qua ACME → challenge HTTP-01 (Ingress controller tự phục vụ challenge trên `/.well-known/acme-challenge/...`) → khi verify OK, tạo Secret chứa cert + private key. Ingress controller nạp Secret, kích hoạt HTTPS. Cert Let's Encrypt hỗ trợ nhiều hostname trong một cert (SAN), nên một cert cover cả 3.
+
+4. **Ingress + TLS là hàng rào ở biên**, nhưng defense in depth giả định **các lớp sẽ thất bại**. Kịch bản: (a) một service có lỗ hổng ứng dụng (SQL injection, RCE) — attacker chiếm được Pod đó qua request hợp lệ đi qua Ingress. Nếu không có NetworkPolicy, từ Pod bị chiếm, attacker gọi thẳng được tới **mọi Pod khác** trong cluster (bao gồm database, secrets manager). Với NetworkPolicy default-deny + rules chặt, Pod bị chiếm chỉ gọi được đúng những gì được phép — blast radius bị giới hạn. (b) Một Pod bị đưa cấu hình sai và expose ra ngoài, hoặc một dev deploy service không qua Ingress mà LoadBalancer trực tiếp — NetworkPolicy vẫn còn kiểm soát traffic đến các service nhạy cảm. Đây đúng là **defense in depth**: mỗi lớp chặn được một số kịch bản, chi phí thêm rất nhỏ so với hậu quả nếu một lớp thủng.
+
+</details>
+
+## Nguồn tham khảo
+
+- The Kubernetes Authors, _Kubernetes Documentation_, sections "Network Policies", "Ingress", "Gateway API" (spec chính thức và ví dụ).
+- Calico Authors, _Calico Documentation_, "Getting started with policy" — mô tả thực thi NetworkPolicy trên Linux dataplane.
+- cert-manager Authors, _cert-manager Documentation_, "Concepts" và "ACME Issuers".
+- Kubernetes SIG Network, _Gateway API_ specification (gateway-api.sigs.k8s.io).

@@ -2,51 +2,27 @@ import { Callout } from "nextra/components";
 
 # Framing & MAC address
 
-Tầng Physical chỉ giao cho ta một dòng bit liên tục, không có dấu hiệu nào cho biết một thông điệp bắt đầu và kết thúc ở đâu. Tầng Data Link giải quyết hai việc nền tảng: gom dòng bit đó thành các **frame** (khung — đơn vị dữ liệu của Layer 2, có ranh giới rõ ràng, địa chỉ và trường kiểm lỗi) qua kỹ thuật **framing**, và gắn cho mỗi card mạng một **MAC address** để các frame biết đi tới đâu trên cùng một liên kết. Bài học này lần lượt giải thích cả hai.
+Tầng Physical chỉ giao cho ta một dòng bit liên tục, không có dấu hiệu nào cho biết một thông điệp bắt đầu và kết thúc ở đâu. Tầng Data Link giải quyết hai việc nền tảng: gom dòng bit đó thành các **frame** (khung — đơn vị dữ liệu của Layer 2, có ranh giới rõ ràng, địa chỉ và trường kiểm lỗi) qua kỹ thuật **framing**, và gắn cho mỗi card mạng một **MAC address** để các frame biết đi tới đâu trên cùng một liên kết. Bài học này lần lượt giải thích cả hai, ở mức đủ để developer đọc log network và debug LAN.
 
-## Framing là gì và vì sao cần nó
+## Framing — vì sao cần và làm ra sao
 
-**Framing** (đóng khung — quá trình phân định ranh giới đầu/cuối của mỗi frame trong dòng bit) là bước đầu tiên của tầng Data Link. Nếu không có nó, máy nhận không thể biết 8 bit nào hợp thành một byte có nghĩa, hay đâu là điểm bắt đầu của một frame mới.
+**Framing** (đóng khung — quá trình phân định ranh giới đầu/cuối của mỗi frame trong dòng bit) là bước đầu tiên của tầng Data Link. Không có nó, máy nhận không biết đâu là điểm bắt đầu của một frame mới.
 
-Vấn đề cốt lõi: máy nhận cần một cách đáng tin cậy để nhận ra ranh giới frame, ngay cả khi chính dữ liệu bên trong có thể chứa các bit trông giống ký hiệu ranh giới. Có vài cách tiếp cận, và hai cách phổ biến nhất là dùng ký hiệu phân định kèm "nhồi" thêm bit/byte để tránh nhầm lẫn.
+Có nhiều cách phân định ranh giới. Ethernet — thứ bạn gặp trong 99% trường hợp — dùng một mẫu **đồng bộ** ở đầu frame (Preamble + SFD, sẽ mô tả kỹ ở bài kế) rồi dựa vào trường độ dài trong header để biết payload dài bao nhiêu. Các protocol điểm-điểm cũ hơn (PPP, HDLC) dùng byte cờ hoặc bit cờ đặc biệt và kỹ thuật "chèn thêm bit thoát" để dữ liệu không nhầm thành cờ.
 
-```mermaid
-flowchart LR
-    A["Physical Layer<br/>dòng bit liên tục<br/>...0101101110..."] --> B["Data Link Layer<br/>framing"]
-    B --> C["FLAG · Frame 1 · FLAG · Frame 2 · FLAG"]
-```
+<Callout type="info">
+  **Cho dev**: bạn không cần nhớ chi tiết byte stuffing / bit stuffing để làm
+  việc. Cái cần nhớ là: **ranh giới frame luôn được phân định rõ ràng ở L2**, và
+  trường **FCS** (Frame Check Sequence) ở cuối frame chứa **CRC-32** để máy nhận
+  phát hiện lỗi bit — hỏng thì frame bị bỏ, không sửa. Retry là việc của L4
+  (TCP) hoặc ứng dụng.
+</Callout>
 
-### Byte stuffing (nhồi byte)
+## MAC address: 48-bit định danh trong một liên kết
 
-Một số protocol (ví dụ **PPP** — Point-to-Point Protocol) dùng một **flag byte** (byte cờ — một giá trị byte đặc biệt đánh dấu ranh giới frame, ví dụ `0x7E`) đặt ở đầu và cuối mỗi frame. Vấn đề nảy sinh khi chính dữ liệu chứa byte `0x7E`: máy nhận sẽ tưởng nhầm là kết thúc frame.
+**MAC address** (Media Access Control address — địa chỉ vật lý 48-bit gắn cứng cho mỗi giao diện mạng) là cách tầng Data Link gọi tên các thiết bị. Mỗi **NIC** (Network Interface Card) thường mang một MAC address do nhà sản xuất gán.
 
-Giải pháp là **byte stuffing** (nhồi byte — chèn một byte thoát phía trước mọi byte dữ liệu trùng với cờ hoặc với chính byte thoát): mỗi khi byte `0x7E` (flag) hoặc `0x7D` (escape) xuất hiện trong dữ liệu, sender chèn một **escape byte** `0x7D` đứng trước nó. Máy nhận thấy `0x7D` thì bỏ nó đi và hiểu byte ngay sau là dữ liệu thật, không phải ranh giới.
-
-```text
-Dữ liệu gốc (hex):     41  7E  42  7D  43
-Sau byte stuffing:     41  7D 7E  42  7D 7D  43
-Đóng cờ để truyền:     7E | 41 7D 7E 42 7D 7D 43 | 7E
-```
-
-### Bit stuffing (nhồi bit)
-
-Ở mức bit, chuẩn **HDLC** dùng mẫu cờ `01111110` (sáu bit `1` liên tiếp giữa hai bit `0`). Để mẫu này không bao giờ xuất hiện tình cờ trong dữ liệu, sender áp dụng **bit stuffing** (nhồi bit — cứ sau mỗi 5 bit `1` liên tiếp trong dữ liệu thì chèn thêm một bit `0`).
-
-Quan sát đầu vào và đầu ra cụ thể:
-
-```text
-Dữ liệu gốc:        1 1 1 1 1 1 0 1
-                    └─ 5 bit 1 ─┘↑ chèn 0 ngay sau bit 1 thứ 5
-Sau bit stuffing:   1 1 1 1 1 0 1 0 1
-```
-
-Nhờ vậy dòng dữ liệu không bao giờ có 6 bit `1` liên tiếp, nên cờ `01111110` luôn được nhận ra chính xác. Máy nhận làm ngược lại: hễ thấy 5 bit `1` rồi tới một bit `0`, nó gỡ bit `0` đó ra để khôi phục dữ liệu gốc.
-
-## MAC address: định dạng 48-bit
-
-**MAC address** (Media Access Control address — địa chỉ vật lý 48-bit gắn cứng cho mỗi giao diện mạng, dùng để định danh trong phạm vi một liên kết Layer 2) là cách tầng Data Link gọi tên các thiết bị. Mỗi **NIC** (Network Interface Card — card giao tiếp mạng) thường mang một MAC address do nhà sản xuất gán.
-
-Một MAC address dài 48 bit = 6 byte, thường viết dưới dạng 12 chữ số hex chia thành 6 cặp. Ví dụ: `00:1A:2B:3C:4D:5E`. 48 bit được chia làm hai nửa:
+Một MAC address dài 48 bit = 6 byte, viết bằng 12 chữ số hex chia thành 6 cặp:
 
 ```text
 MAC: 00:1A:2B:3C:4D:5E      (48 bit = 6 byte = 12 hex)
@@ -55,79 +31,82 @@ MAC: 00:1A:2B:3C:4D:5E      (48 bit = 6 byte = 12 hex)
   3C:4D:5E   ->  NIC   (24 bit thấp, số hiệu thiết bị do hãng tự gán)
 ```
 
-Nửa đầu là **OUI** (Organizationally Unique Identifier — 24 bit đầu do IEEE cấp, định danh nhà sản xuất). Nửa sau (24 bit) do chính nhà sản xuất gán cho từng thiết bị, đảm bảo mỗi MAC address là duy nhất trên toàn cầu.
+Nửa đầu là **OUI** (Organizationally Unique Identifier — 24 bit đầu do IEEE cấp, định danh nhà sản xuất). Nửa sau (24 bit) do chính nhà sản xuất gán cho từng thiết bị, đảm bảo MAC address là duy nhất trên toàn cầu. Tra OUI trong log network sẽ biết ngay card mạng thuộc hãng nào — mẹo hay dùng khi phân tích packet capture.
 
-<Callout type="info">
-  24 bit OUI cho phép khoảng 16,7 triệu nhà sản xuất; 24 bit còn lại cho mỗi
-  hãng khoảng 16,7 triệu địa chỉ thiết bị. Tra OUI sẽ biết được hãng sản xuất
-  card mạng, rất hữu ích khi phân tích traffic.
-</Callout>
+## Unicast, multicast, broadcast
 
-## Unicast, multicast và broadcast
-
-Bit thấp nhất (LSB) của **byte đầu tiên** quyết định frame gửi cho một hay nhiều đích — gọi là **I/G bit** (Individual/Group bit). Bit kế tiếp là **U/L bit** (Universal/Local) cho biết địa chỉ là toàn cục hay được gán cục bộ.
-
-```text
-Byte đầu = 0x00 = 0 0 0 0 0 0 0 0
-                                 │ └ I/G bit = 0  -> unicast (gửi 1 đích)
-                                 └── U/L bit = 0  -> địa chỉ toàn cục (global)
-```
+Bit thấp nhất (LSB) của **byte đầu tiên** quyết định frame gửi cho một hay nhiều đích — gọi là **I/G bit** (Individual/Group bit):
 
 - **unicast** (đơn hướng — frame gửi tới đúng một giao diện đích): I/G bit = `0`.
 - **multicast** (đa hướng — frame gửi tới một nhóm giao diện đã đăng ký): I/G bit = `1`.
 - **broadcast** (quảng bá — frame gửi tới mọi giao diện trong cùng broadcast domain): địa chỉ toàn bit `1`, tức `FF:FF:FF:FF:FF:FF`.
 
-Ví dụ cụ thể, phân loại 3 địa chỉ bằng cách đọc byte đầu:
+Ba ví dụ:
 
-| MAC address           | Byte đầu (nhị phân) | I/G bit | Loại      |
-| --------------------- | ------------------- | ------- | --------- |
-| `00:1A:2B:3C:4D:5E`   | `0000 0000`         | 0       | unicast   |
-| `01:00:5E:0A:0B:0C`   | `0000 0001`         | 1       | multicast |
-| `FF:FF:FF:FF:FF:FF`   | `1111 1111`         | 1       | broadcast |
+| MAC address         | Byte đầu (nhị phân) | I/G bit | Loại      |
+| ------------------- | ------------------- | ------- | --------- |
+| `00:1A:2B:3C:4D:5E` | `0000 0000`         | 0       | unicast   |
+| `01:00:5E:0A:0B:0C` | `0000 0001`         | 1       | multicast |
+| `FF:FF:FF:FF:FF:FF` | `1111 1111`         | 1       | broadcast |
 
-## Mục đích của MAC addressing
+## MAC vs IP: hai lớp địa chỉ khác nhau
 
-MAC address phục vụ việc giao frame **trong phạm vi một liên kết** (hop-to-hop), khác với IP address lo việc đi xuyên nhiều mạng (end-to-end). Khi một frame chạy trên một mạng LAN, switch dùng MAC đích để quyết định đẩy frame ra cổng nào (xem bài **Switching & VLAN**). Vì MAC chỉ có ý nghĩa nội bộ một chặng, nó được thay mới ở mỗi router trên đường đi, trong khi IP nguồn/đích giữ nguyên.
+Đây là điểm dev hay nhầm khi debug. Bảng dưới đối chiếu nhanh:
+
+| Khía cạnh   | MAC address (L2)           | IP address (L3)                   |
+| ----------- | -------------------------- | --------------------------------- |
+| Kích thước  | 48 bit                     | 32 bit (IPv4) / 128 bit (IPv6)    |
+| Phạm vi     | Một liên kết (hop-to-hop)  | Xuyên nhiều mạng (end-to-end)     |
+| Cấp phát    | Nhà sản xuất gán cứng      | Cấp động (DHCP) hoặc gán tay      |
+| Đổi qua hop | **Có** — thay ở mỗi router | **Không** — giữ nguyên suốt đường |
+
+Ý nghĩa cho dev: khi bạn xem log firewall/router thấy IP nguồn thay đổi qua NAT là chuyện bình thường, nhưng nếu thấy MAC address bên trong LAN sai lệch thì đó là dấu hiệu của ARP spoofing hoặc thiết bị đang mạo danh.
+
+## Ví dụ thực tế: xem MAC trên máy của bạn
+
+Trên Linux/macOS, `ip link` hoặc `ifconfig` hiển thị MAC của từng interface:
+
+```bash
+$ ip link show eth0
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 ...
+    link/ether 3c:22:fb:8a:44:6e brd ff:ff:ff:ff:ff:ff
+```
+
+`link/ether 3c:22:fb:8a:44:6e` là MAC của card; `brd ff:ff:ff:ff:ff:ff` là địa chỉ broadcast dùng cho frame gửi mọi máy trong LAN. Tra OUI `3c:22:fb` sẽ ra hãng sản xuất card.
+
+Trên Windows dùng `ipconfig /all`; trường "Physical Address" chính là MAC.
 
 ## Tóm tắt nhanh
 
-- **Framing** phân định ranh giới frame trong dòng bit; **byte stuffing** và **bit stuffing** tránh việc dữ liệu bị nhầm thành ký hiệu ranh giới.
-- **MAC address** dài 48 bit = 6 byte, viết bằng 12 hex; gồm **OUI** (24 bit, IEEE cấp) + 24 bit thiết bị.
-- **I/G bit** (LSB của byte đầu) phân biệt unicast (`0`) với multicast (`1`); **broadcast** là `FF:FF:FF:FF:FF:FF`.
-- MAC address định danh ở phạm vi một liên kết (hop-to-hop), được thay mới qua mỗi router.
+- **Framing** phân định ranh giới frame trong dòng bit; Ethernet dùng Preamble/SFD + trường length; các protocol khác có kỹ thuật stuffing riêng (không cần thuộc lòng).
+- **FCS** (CRC-32) ở cuối frame chỉ **phát hiện** lỗi; frame lỗi bị bỏ, việc gửi lại thuộc tầng cao hơn.
+- **MAC address** = **OUI** (24-bit IEEE cấp) + 24 bit thiết bị; viết dạng 12 hex.
+- **I/G bit** (LSB byte đầu) phân biệt unicast (`0`) / multicast (`1`); **broadcast** là `FF:FF:FF:FF:FF:FF`.
+- MAC hoạt động **trong một liên kết**, được thay mới ở mỗi router; IP hoạt động **xuyên nhiều mạng**, giữ nguyên suốt đường.
 
 ## Bài tập
 
 ### Câu hỏi lý thuyết
 
-1. Giải thích vì sao tầng Data Link cần framing. Nêu sự khác nhau cơ bản giữa byte stuffing và bit stuffing.
-2. Cho MAC address `01:80:C2:00:00:0E`. Đây là unicast, multicast hay broadcast? OUI của nó là phần nào?
+1. Cho MAC address `01:80:C2:00:00:0E`. Đây là unicast, multicast hay broadcast? OUI là phần nào, và điều đó cho biết gì?
+2. Vì sao một packet đi qua 4 router sẽ có **IP nguồn/đích không đổi** nhưng **MAC nguồn/đích thay đổi** ở mỗi chặng? Liên hệ tới phạm vi hoạt động của L2 so với L3.
 
-### Bài tập tính toán
+### Bài tập tình huống
 
-3. Áp dụng bit stuffing (chèn một bit `0` sau mỗi 5 bit `1` liên tiếp) cho chuỗi dữ liệu sau và viết ra kết quả truyền đi:
-
-   ```text
-   0111111001111110
-   ```
+3. Bạn đang debug lỗi mạng trong văn phòng. `tcpdump` bắt được frame có **Source MAC** khớp với MAC của router (default gateway), nhưng **Destination MAC** là `FF:FF:FF:FF:FF:FF`. Đây là loại frame gì, và tại sao router lại gửi broadcast? (Gợi ý: nghĩ về ARP.)
 
 <details>
   <summary>Đáp án & gợi ý</summary>
 
-1. Cần framing vì Physical Layer chỉ giao một dòng bit liên tục, không có mốc nào cho biết frame bắt đầu/kết thúc; framing tạo ranh giới để máy nhận tách đúng từng frame. Khác biệt: **byte stuffing** làm việc ở mức byte (chèn escape byte `0x7D` trước byte trùng cờ/escape), còn **bit stuffing** làm ở mức bit (chèn bit `0` sau 5 bit `1` liên tiếp).
-2. Byte đầu `0x01` = `0000 0001`, LSB (I/G bit) = `1` ⇒ đây là **multicast** (cụ thể là một địa chỉ multicast chuẩn của IEEE). **OUI** là 24 bit đầu: `01:80:C2`.
-3. Mỗi chuỗi gốc có hai cụm sáu bit `1`; sau cụm 5 bit `1` đầu tiên của mỗi cụm, chèn một bit `0`:
+1. Byte đầu `0x01` = `0000 0001`, LSB (I/G bit) = `1` ⇒ **multicast** (cụ thể là địa chỉ multicast chuẩn của IEEE dùng cho protocol quản lý mạng). **OUI** = `01:80:C2`, do IEEE cấp cho các protocol quản lý bridge/switch (không phải một hãng cụ thể mà là dải dành cho standard protocols).
 
-   ```text
-   Gốc:  0 111111 00 111111 0
-   Ra:   0 11111 0 1 00 11111 0 1 0
-       = 011111010011111010
-   ```
+2. **IP address** thuộc L3 và định danh **end-to-end** (nguồn thật và đích thật của cuộc trò chuyện), nên router chỉ nhìn IP đích để chọn đường mà không sửa. **MAC address** thuộc L2 và chỉ định danh **hop-to-hop** (một chặng vật lý giữa hai thiết bị kề nhau). Ở mỗi router: MAC nguồn = MAC của router đó, MAC đích = MAC của next-hop trên chặng kế tiếp. Vậy MAC luôn thay khi packet đổi chặng.
+
+3. Đây là **ARP request**: router (hoặc bất kỳ máy nào cần biết MAC của một IP trong LAN) gửi broadcast "ai giữ IP này thì trả lời cho tôi". Broadcast được dùng vì router chưa biết MAC đích, nên phải hỏi mọi máy. Máy có IP tương ứng trả về ARP reply (unicast) với MAC của mình. Đây là cầu nối giữa L3 (IP) và L2 (MAC) trong một mạng cục bộ.
 
 </details>
 
 ## Nguồn tham khảo
 
 - J. F. Kurose & K. W. Ross, _Computer Networking: A Top-Down Approach_, 8th ed., mục 6.1 và 6.4 (Link layer, Link-Layer Addressing and ARP).
-- A. S. Tanenbaum & D. J. Wetherall, _Computer Networks_, 5th ed., mục 3.1 (Framing — byte/bit stuffing).
 - IEEE Std 802-2014, _IEEE Standard for Local and Metropolitan Area Networks: Overview and Architecture_, phần định dạng địa chỉ 48-bit và OUI.

@@ -1,0 +1,356 @@
+import { Callout } from "nextra/components";
+
+# curl Cookbook
+
+`curl` là công cụ mọi developer đều dùng nhưng ít khi khai thác hết. Bài này là **cookbook** — tập các công thức ngắn giải quyết vấn đề thật hay gặp: debug API, đo latency từng giai đoạn, ép DNS/IP, test HTTPS, gửi payload phức tạp, mimic browser. Mỗi công thức có input và output cụ thể để bạn copy-paste và dùng ngay.
+
+## Đọc header và tách chi tiết
+
+**Chỉ xem status + header, không tải body:**
+
+```bash
+$ curl -sI https://example.com
+HTTP/2 200
+content-type: text/html; charset=UTF-8
+content-length: 1256
+cache-control: max-age=604800
+```
+
+**Xem cả handshake + header (verbose):**
+
+```bash
+$ curl -v https://example.com 2>&1 | head -20
+* Host example.com:443 was resolved.
+* IPv4: 93.184.216.34
+* Connected to example.com (93.184.216.34) port 443
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* Server certificate:
+*  subject: CN=example.com
+*  issuer: CN=DigiCert TLS RSA SHA256 2020 CA1
+> GET / HTTP/2
+> Host: example.com
+> User-Agent: curl/8.4.0
+> Accept: */*
+< HTTP/2 200
+< content-type: text/html
+```
+
+Dòng `*` là log của curl (không phải HTTP), `>` là request gửi, `<` là response nhận. Đây là cách nhanh nhất xem trọn TLS handshake + HTTP request/response trong một lệnh.
+
+## Ép phiên bản HTTP
+
+Buộc curl dùng một phiên bản cụ thể để test:
+
+```bash
+$ curl -sI --http1.1 https://example.com | head -1
+HTTP/1.1 200 OK
+
+$ curl -sI --http2 https://example.com | head -1
+HTTP/2 200
+
+$ curl -sI --http3 https://example.com | head -1
+HTTP/3 200
+```
+
+Hữu ích khi debug server hỗ trợ phiên bản nào, hoặc so sánh hành vi giữa các phiên bản.
+
+## Đo latency từng giai đoạn
+
+Đây là công thức "thần thánh" để phân tích tại sao API chậm:
+
+```bash
+$ curl -w "@-" -o /dev/null -s https://example.com/api/users <<'EOF'
+     dns_lookup:  %{time_namelookup}s
+        connect:  %{time_connect}s
+     tls_setup:  %{time_appconnect}s
+   pre_transfer:  %{time_pretransfer}s
+starttransfer:  %{time_starttransfer}s
+    total_time:  %{time_total}s
+     size_download:  %{size_download} bytes
+EOF
+```
+
+Output ví dụ:
+
+```text
+     dns_lookup:  0.024s
+        connect:  0.037s
+     tls_setup:  0.098s
+   pre_transfer:  0.098s
+starttransfer:  0.245s
+    total_time:  0.256s
+     size_download:  15234 bytes
+```
+
+Đọc từ trên xuống, mỗi giá trị là **thời điểm cộng dồn** từ khi bắt đầu:
+
+- `dns_lookup: 0.024s` — DNS resolve xong.
+- `connect: 0.037s` — TCP handshake xong (thêm 13 ms).
+- `tls_setup: 0.098s` — TLS handshake xong (thêm 61 ms).
+- `starttransfer: 0.245s` — server bắt đầu gửi body (server xử lý mất ~150 ms).
+- `total_time: 0.256s` — nhận xong body (thêm 11 ms).
+
+Nếu `starttransfer` chiếm phần lớn, server chậm. Nếu `tls_setup` cao, TLS chậm (đường xa hoặc TLS 1.2). Nếu `dns_lookup` > 100 ms, DNS server bạn dùng có vấn đề. Đây là công cụ #1 khi ai đó nói "API chậm".
+
+<Callout type="info">
+  Lưu format này vào file `~/.curl-format.txt` rồi gọi bằng `curl -w "@$HOME/.curl-format.txt" ...`
+  để không phải nhớ syntax.
+</Callout>
+
+## Ép IP hoặc DNS server
+
+**Buộc kết nối tới IP cụ thể** (test failover, test local server với domain thật):
+
+```bash
+# Test staging: domain vẫn là example.com nhưng IP thật là 10.0.0.5
+$ curl --resolve example.com:443:10.0.0.5 https://example.com/api/health
+```
+
+Cờ `--resolve host:port:ip` ghi đè DNS ngay tại curl, không cần đổi `/etc/hosts`.
+
+**Dùng DNS server khác:**
+
+```bash
+$ curl --dns-servers 1.1.1.1,8.8.8.8 https://example.com/api/health
+```
+
+Hữu ích khi DNS mặc định của máy có vấn đề, muốn kiểm bằng resolver khác.
+
+## Gửi payload phức tạp
+
+**JSON body:**
+
+```bash
+$ curl -X POST https://api.example.com/users \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"name": "Alice", "age": 30}'
+```
+
+**JSON từ file** (payload lớn):
+
+```bash
+$ curl -X POST https://api.example.com/import \
+  -H "Content-Type: application/json" \
+  -d @payload.json
+```
+
+Dấu `@` trước tên file báo curl đọc từ file thay vì literal.
+
+**Form-encoded** (giả browser):
+
+```bash
+$ curl -X POST https://example.com/login \
+  -d "username=alice" \
+  -d "password=secret123"
+```
+
+**Multipart file upload:**
+
+```bash
+$ curl -X POST https://api.example.com/upload \
+  -F "file=@document.pdf" \
+  -F "description=Q4 report"
+```
+
+Cờ `-F` tạo multipart/form-data đúng chuẩn, kể cả tên file gốc.
+
+## Cookies và session
+
+**Giữ cookie giữa các request** (lưu vào file):
+
+```bash
+# Login: lưu cookie server set
+$ curl -c cookies.txt -X POST https://example.com/login \
+  -d "username=alice" -d "password=secret"
+
+# Request tiếp theo: nạp cookie đã lưu
+$ curl -b cookies.txt https://example.com/api/me
+```
+
+**In các cookie đang lưu:**
+
+```bash
+$ cat cookies.txt
+# Netscape HTTP Cookie File
+example.com  FALSE  /  TRUE  1735689600  sessionid  abc123
+```
+
+Rất tiện để test flow login rồi gọi endpoint bảo mật mà không phải mở browser.
+
+## Debug TLS
+
+**Xem full chain certificate:**
+
+```bash
+$ curl -sIv https://example.com 2>&1 | grep -E "subject|issuer|expire"
+*  subject: CN=example.com
+*  start date: Nov 15 10:30:00 2024 GMT
+*  expire date: Feb 13 10:30:00 2025 GMT
+*  issuer: CN=Let's Encrypt R3
+```
+
+**Test với CA nội bộ** (cert do CA tự ký):
+
+```bash
+$ curl --cacert /etc/ssl/internal-ca.pem https://internal.example.com/
+```
+
+**Bỏ qua kiểm cert** (chỉ cho debug local, không dùng production):
+
+```bash
+$ curl -k https://self-signed.example.com/
+```
+
+**Test mTLS** (client gửi cert lên):
+
+```bash
+$ curl --cert client.pem --key client-key.pem https://api.example.com/secure
+```
+
+## Retry và timeout
+
+**Timeout tổng và cho connect:**
+
+```bash
+$ curl --connect-timeout 3 --max-time 10 https://api.example.com/
+```
+
+**Retry với backoff:**
+
+```bash
+$ curl --retry 3 --retry-delay 2 --retry-max-time 30 https://api.example.com/health
+```
+
+Cờ `--retry 3` thử lại tối đa 3 lần trên các lỗi mạng (không phải 4xx); `--retry-delay 2` chờ 2s giữa các lần.
+
+## Mimic browser
+
+Đôi khi server chặn curl mặc định. Giả browser để test:
+
+```bash
+$ curl -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15" \
+       -H "Accept-Language: vi-VN,vi;q=0.9,en;q=0.8" \
+       -H "Accept: text/html,application/xhtml+xml" \
+       https://example.com/
+```
+
+Còn dễ hơn: mở DevTools trong browser, chuột phải một request → "Copy as cURL" — dán ra terminal là có mọi header y hệt browser.
+
+## Test API GraphQL
+
+GraphQL luôn POST tới một endpoint với body JSON có `query`:
+
+```bash
+$ curl -X POST https://api.example.com/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query": "{ user(id: \"42\") { name email } }"}'
+```
+
+Hoặc với biến:
+
+```bash
+$ curl -X POST https://api.example.com/graphql \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query GetUser($id: ID!) { user(id: $id) { name } }",
+    "variables": { "id": "42" }
+  }'
+```
+
+## Đo throughput file lớn
+
+Tải file và xem tốc độ thật:
+
+```bash
+$ curl -o /tmp/big.iso -w "avg_speed: %{speed_download} bytes/s\ntotal: %{time_total}s\n" \
+       https://cdn.example.com/big.iso
+```
+
+Cột `speed_download` là byte/giây; chia cho `1024 * 1024` ra MB/s.
+
+## Kiểm tra cache CDN
+
+Xem một tài nguyên có được cache ở CDN không:
+
+```bash
+$ curl -sI https://cdn.example.com/app.a3f2c891.js | grep -Ei "cache|age|x-cache|cf-"
+cache-control: public, max-age=31536000, immutable
+age: 12432
+cf-cache-status: HIT
+```
+
+`cf-cache-status: HIT` (Cloudflare), `x-cache: Hit from ...` (CloudFront), `x-served-by: cache-...` (Fastly) đều báo hiệu CDN phục vụ, không đụng origin.
+
+## Tổ hợp: khi API không hoạt động
+
+Một quy trình debug điển hình:
+
+```bash
+# 1. DNS có resolve đúng không?
+$ curl --resolve api.example.com:443:0.0.0.0 -v https://api.example.com/health 2>&1 | head -5
+
+# 2. Kết nối được tới port 443 không?
+$ curl --connect-timeout 3 -o /dev/null -sw "connect: %{time_connect}\n" \
+       https://api.example.com/health
+
+# 3. TLS handshake OK không?
+$ curl -sI https://api.example.com/health 2>&1 | head -1
+
+# 4. Endpoint trả gì?
+$ curl -v https://api.example.com/health
+
+# 5. So sánh: cùng endpoint từ IP khác/nội bộ?
+$ curl --resolve api.example.com:443:10.0.0.5 -v https://api.example.com/health
+```
+
+Đây là bản dày dạn hơn của flow troubleshooting ở bài trước — kết hợp curl với ping/dig để định vị lỗi nhanh.
+
+## Tóm tắt nhanh
+
+- **`-I`** header only, **`-v`** verbose bao gồm handshake.
+- **`--http1.1|--http2|--http3`** ép phiên bản; **`-w`** format output với biến thời gian từng giai đoạn.
+- **`--resolve host:port:ip`** ép IP cho một hostname; **`--cacert`**, **`--cert/--key`** cho TLS/mTLS.
+- **`-d @file`**, **`-F "file=@..."`** để gửi payload lớn hoặc multipart.
+- **`-c cookies.txt`** lưu, **`-b cookies.txt`** dùng lại — test flow login đầy đủ.
+- **`--connect-timeout`** + **`--max-time`** + **`--retry`** cho request robust.
+- Mẹo: "Copy as cURL" từ DevTools rồi tinh chỉnh — thần tốc hơn viết tay.
+
+## Bài tập
+
+### Bài tập thực hành
+
+1. Chạy công thức đo latency từng giai đoạn cho một website bạn hay dùng. Cho biết: (a) `time_namelookup`, `time_connect`, `time_appconnect`, `time_starttransfer`, `time_total` của nó; (b) giai đoạn nào chiếm phần lớn tổng thời gian; (c) suy ra gợi ý cải thiện (DNS chậm? TLS chậm? server chậm?).
+
+2. Giả sử bạn cần test một staging API tại IP `10.0.0.5` nhưng cert TLS được cấp cho `api.example.com`. Viết lệnh `curl` để: (a) truy cập được service với hostname đúng nhưng IP là staging; (b) nếu cert đang hết hạn, làm gì để tiếp tục test?
+
+3. Bạn có endpoint `POST /api/orders` cần `Authorization: Bearer <token>` và body JSON `{"item": "abc", "qty": 2}`. Server thỉnh thoảng timeout. Viết một lệnh `curl` gọi endpoint này với: connect timeout 2s, timeout tổng 8s, retry 3 lần nếu lỗi mạng, in ra chỉ status code và total time.
+
+<details>
+  <summary>Đáp án & gợi ý</summary>
+
+1. Đáp án tùy website. Đọc như sau: (a) 5 giá trị là **cộng dồn** từ khi bắt đầu; (b) tính hiệu để biết từng giai đoạn: DNS = `namelookup`, TCP = `connect - namelookup`, TLS = `appconnect - connect`, server = `starttransfer - appconnect`, body = `total - starttransfer`. Giai đoạn lớn nhất chỉ ra chỗ chậm. (c) Nếu **DNS** > 100 ms thường do resolver kém, đổi sang `1.1.1.1`. Nếu **TLS** > 200 ms có thể do server ở xa hoặc chưa dùng TLS 1.3/HTTP/3. Nếu **server** > 500 ms là code/DB chậm, cần debug ở backend. Nếu **body** lớn với gói lớn, có thể do bandwidth hoặc chưa nén.
+
+2. (a) `curl --resolve api.example.com:443:10.0.0.5 https://api.example.com/health` — hostname trong URL vẫn là `api.example.com` để TLS SNI + cert match, nhưng curl kết nối thẳng tới `10.0.0.5`. (b) Nếu cert hết hạn, thêm `-k` để bỏ kiểm cert (chỉ dùng test): `curl -k --resolve ...`. Hoặc dùng `--cacert` với CA nội bộ nếu cert do CA nội bộ ký.
+
+3.
+```bash
+curl -X POST https://api.example.com/api/orders \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"item": "abc", "qty": 2}' \
+  --connect-timeout 2 \
+  --max-time 8 \
+  --retry 3 --retry-delay 1 \
+  -o /dev/null -sw "status: %{http_code}  total: %{time_total}s\n"
+```
+
+Cờ `-o /dev/null` vứt body, `-s` tắt progress, `-w` in status code và thời gian tổng — đúng yêu cầu.
+
+</details>
+
+## Nguồn tham khảo
+
+- `curl(1)` man page — tham chiếu đầy đủ mọi cờ.
+- D. Stenberg, _Everything curl_ — sách online miễn phí của tác giả curl, bao gồm cookbook và giải thích internals.
+- MDN Web Docs, "Web Console" — chức năng "Copy as cURL" từ DevTools.

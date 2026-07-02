@@ -1,0 +1,52 @@
+# Tóm tắt Chương 10: Performance & Reliability
+
+Chương này bổ sung góc nhìn "kỹ năng vận hành" mà khóa networking truyền thống không có: đo latency đúng cách, thiết kế hệ chịu được lỗi, và nhìn thấy điều gì đang xảy ra ở production. Dưới đây là các khái niệm chính theo từng bài, sau đó là bài tập ôn tập kết hợp.
+
+## Các khái niệm chính
+
+### Latency & Tail Latency
+
+- Latency là **phân phối**; **P95/P99/P999** cho biết trải nghiệm tail user, thường quan trọng hơn P50 khi hệ có scale hoặc nhiều dependency (**tail amplification**: `1 - (1-p)^N`).
+- **Latency budget** chia SLO cho các thành phần: propagation, handshake, server, DB, response.
+- Nguồn tail: **GC pause**, **DB contention**, **cache miss**, kernel scheduling, retransmit, cold path.
+- Đo: **Histogram** (không phải Summary); đủ dữ liệu cho P99+; tránh **coordinated omission**.
+- Cải thiện: **hedged requests**, **timeout + retry**, **warm caches + pre-connect**.
+
+### Timeouts, Retries & Circuit Breakers
+
+- **Timeout** ngăn hang; đặt riêng cho DNS/connect/TLS/read; connect ngắn, read dài.
+- **Retry** chỉ cho **idempotent + retryable errors**; POST cần **idempotency key**.
+- **Exponential backoff + jitter** tránh thundering herd; cap thời gian; giới hạn số lần.
+- **Circuit breaker** ba trạng thái Closed/Open/Half-Open; kết hợp với **fallback**.
+- Thứ tự kết hợp: **CB → timeout → gọi → nếu lỗi retryable thì backoff + retry**.
+
+### Observability & Tracing
+
+- Ba trụ cột: **metrics** (có vấn đề không?), **traces** (ở đâu?), **logs** (tại sao?).
+- **RED** (Rate/Errors/Duration) cho service; **USE** (Utilization/Saturation/Errors) cho resource.
+- **W3C Trace Context** (`traceparent` header) nối span qua service; **OpenTelemetry** thống nhất SDK.
+- **Sampling**: head (nhanh) hoặc tail (giữ hết bất thường); **exemplars** nối metric ↔ trace.
+- **eBPF** cho observability ở kernel không cần instrument app; nền tảng cho Cilium Hubble, Pixie, sidecarless mesh.
+
+## Bài tập ôn tập
+
+1. **(Lý thuyết — kết hợp "Latency & Tail Latency" + "Timeouts, Retries & Circuit Breakers")** Một API có P99 = 1000ms, P50 = 100ms. Bạn muốn user chờ tối đa 1500ms. Đề xuất chiến lược: (a) timeout tổng đặt bao nhiêu; (b) có nên bật retry không, nếu có thì với backoff/số lần thế nào; (c) trong trường hợp retry, thời gian tổng worst case là bao nhiêu, có vượt 1500ms không?
+
+2. **(Tình huống thực tế — kết hợp cả ba bài)** Sếp báo P99 checkout tăng từ 500ms lên 3s trong 30 phút qua. Mô tả một **playbook** để debug: (a) dashboard nào (RED) bạn nhìn đầu tiên; (b) từ đó dùng trace để định vị chặng nào chậm; (c) xem log của service nghi ngờ; (d) nếu là DB contention, cách nhanh nhất mitigate ngay là gì để giảm impact ngắn hạn; (e) fix dài hạn dựa vào patterns đã học.
+
+3. **(Phân tích — kết hợp "Latency & Tail Latency" + "Observability & Tracing")** Một team đang dùng metric `average_response_time` để định nghĩa SLO. Bạn muốn thuyết phục họ đổi sang P99. Nêu ba lý do cụ thể, và giải thích **coordinated omission** có thể làm cả average lẫn P99 sai lệch ra sao nếu đo lường không đúng.
+
+4. **(Tình huống — kết hợp "Timeouts, Retries & Circuit Breakers" + "Observability & Tracing")** Bạn cài xong circuit breaker cho service của mình. Nhưng làm sao biết nó thực sự hoạt động đúng ở production? Đề xuất: (a) metric gì cần expose từ circuit breaker (dựa RED); (b) alert nào bạn set; (c) cách test bằng chaos injection để verify các trạng thái Closed → Open → Half-Open → Closed xảy ra như mong đợi.
+
+<details>
+  <summary>Đáp án</summary>
+
+1. (a) **Timeout tổng**: 1500ms — đủ để cover P99 (1000ms) và có margin cho retry hoặc mạng. (b) **Retry**: nên bật vì request idempotent (giả định GET/HEAD); backoff 100ms + full jitter, giới hạn 2 lần retry (tổng 3 attempt). (c) **Worst case với 2 retry**: `1000 (attempt 1 chạm P99) + 100 (backoff) + 1000 (attempt 2 chạm P99) + 200 (backoff cap) + 1000 (attempt 3 chạm P99) = 3300ms` — **vượt 1500ms**. Kết luận: retry với đủ số lần không khả thi trong budget này. Có hai lựa chọn: (i) giảm số retry còn 1 (attempt 2 lần, worst = ~1200ms nếu attempt đầu nhanh), (ii) đặt timeout **mỗi attempt** ngắn hơn (ví dụ 500ms) để retry có nghĩa; nếu attempt vượt 500ms, hủy và retry. Trade-off: attempt timeout ngắn có thể cắt request thành công đang chậm.
+
+2. (a) Mở dashboard **RED** của `checkout-service`: kiểm request rate (traffic bình thường không?), error rate (5xx tăng không?), duration histogram (P99 tăng, P50 tăng?). Loại nghi ngờ traffic spike và lỗi bulk. (b) Từ dashboard, click **exemplar** ở P99 → nhảy sang Jaeger/Tempo, xem waterfall của request chậm; xác định span nào chiếm phần lớn 3s. (c) Filter **log** theo `trace_id` của trace đó ở service nghi ngờ; xem có warning/error, DB timeout, retry log không. (d) **Mitigate ngay**: nếu DB contention, scale read replica hoặc rollout circuit breaker giữa checkout và DB để fail fast + fallback (queue order sau); nếu do một query cụ thể chậm, tạm add index emergency. (e) **Fix dài hạn**: dùng caching cho hot data giảm DB load; áp latency budget từng bước checkout; đảm bảo retry của downstream call không nhân bản request lên DB; observability chi tiết hơn cho DB slow query.
+
+3. Ba lý do đổi sang P99: (i) **Average bị outlier kéo lệch**: 1 request 30s trong 1000 request bình thường làm average sai lệch; P99 robust hơn. (ii) **Average không phản ánh trải nghiệm cá nhân**: user ở tail không thấy average mà thấy request cụ thể của mình chậm; SLO phải bảo vệ trải nghiệm của mọi user, không chỉ user "trung bình". (iii) **Tail amplification**: khi hệ có nhiều dependency, request có xác suất chạm tail của một service nào đó rất cao — chỉ P99 mới phản ánh được. **Coordinated omission**: nếu đo latency từ lúc handler bắt đầu (không tính queue wait) khi hệ quá tải, cả average lẫn P99 đều thấp giả — user thấy 5s nhưng metric báo 50ms. Fix: đo từ lúc request tới server (accept từ TCP).
+
+4. (a) **Metric từ circuit breaker**: `cb_state{name="user-service"}` (gauge: 0=Closed, 1=HalfOpen, 2=Open), `cb_calls_total{name, result="success|failure|rejected"}` (counter), `cb_state_change_total{name, from, to}` (counter). Rút RED: rate = tổng calls, errors = rejected (do CB mở), duration = ... (không đo trực tiếp trong CB, dùng metric HTTP thường). (b) **Alerts**: (i) `cb_state == 2` (Open) kéo dài > 5 phút → dependency thực sự down, cần intervene; (ii) `cb_state_change_total` tăng nhiều (state flip lung tung) → ngưỡng CB đặt sai hoặc dependency chập chờn. (c) **Chaos test**: dùng toxiproxy hoặc network policy tạm cắt kết nối tới dependency; expected sequence: (i) N request đầu fail → CB đếm; (ii) sau 5 lỗi liên tiếp, `cb_state` chuyển 0→2 (Closed→Open), `cb_calls_total{result="rejected"}` bắt đầu tăng; (iii) sau cooldown 30s, `cb_state` = 1 (Half-Open), 1 request thử; (iv) gỡ chaos, request thử OK, `cb_state` = 0 (Closed); (v) trở về bình thường. Nếu bất kỳ bước nào không xảy ra, config sai.
+
+</details>
