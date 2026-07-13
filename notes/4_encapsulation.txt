@@ -1,0 +1,949 @@
+Podcast: Wrapping and Unwrapping Data (Encapsulation)
+
+aaaaaa
+
+Hello, and welcome to the show.
+
+aaaaaa
+
+Today we talk about networking again.
+
+aaaaaa
+
+Our topic is "encapsulation."
+
+aaaaaa
+
+That is a big word.
+
+aaaaaa
+
+Do not worry.
+
+aaaaaa
+
+I will speak slowly.
+
+aaaaaa
+
+I will use easy words.
+
+aaaaaa
+
+And I will say the big word many times.
+
+aaaaaa
+
+Soon it will feel easy.
+
+aaaaaa
+
+Are you ready?
+
+aaaaaa
+
+Let's start.
+
+aaaaaa
+
+What is encapsulation?
+
+aaaaaa
+
+Encapsulation is a big word for a small idea.
+
+aaaaaa
+
+It means "wrapping."
+
+aaaaaa
+
+Data goes down the layers.
+
+aaaaaa
+
+Each layer wraps the data.
+
+aaaaaa
+
+Each layer adds a little bit of information.
+
+aaaaaa
+
+That little bit is called a "header."
+
+aaaaaa
+
+There is a second word too.
+
+aaaaaa
+
+It is "de-encapsulation."
+
+aaaaaa
+
+This means "unwrapping."
+
+aaaaaa
+
+It happens on the other computer.
+
+aaaaaa
+
+Data goes up the layers.
+
+aaaaaa
+
+Each layer takes off one header.
+
+aaaaaa
+
+So remember two easy words.
+
+aaaaaa
+
+Wrapping is encapsulation.
+
+aaaaaa
+
+Unwrapping is de-encapsulation.
+
+aaaaaa
+
+One computer wraps.
+
+aaaaaa
+
+The other computer unwraps.
+
+aaaaaa
+
+The letter and the envelopes.
+
+aaaaaa
+
+Let's use a simple picture.
+
+aaaaaa
+
+Think about a letter.
+
+aaaaaa
+
+You write a letter.
+
+aaaaaa
+
+This is your data.
+
+aaaaaa
+
+Now you put the letter in an envelope.
+
+aaaaaa
+
+On the envelope, you write an address.
+
+aaaaaa
+
+Then you put that envelope inside a bigger envelope.
+
+aaaaaa
+
+You write a new address on it.
+
+aaaaaa
+
+You do this again and again.
+
+aaaaaa
+
+Envelope inside envelope inside envelope.
+
+aaaaaa
+
+This is encapsulation.
+
+aaaaaa
+
+The letter is the same.
+
+aaaaaa
+
+But now it has many covers.
+
+aaaaaa
+
+Each cover has its own address.
+
+aaaaaa
+
+Each cover has its own job.
+
+aaaaaa
+
+Header and payload.
+
+aaaaaa
+
+Now two more easy words.
+
+aaaaaa
+
+"Header" and "payload."
+
+aaaaaa
+
+The header is the front part.
+
+aaaaaa
+
+It holds control information.
+
+aaaaaa
+
+For example, an address, or a number, or an error check.
+
+aaaaaa
+
+It is small.
+
+aaaaaa
+
+The payload is the real data inside.
+
+aaaaaa
+
+It is the thing we want to send.
+
+aaaaaa
+
+Here is the key idea.
+
+aaaaaa
+
+A layer gets data from the layer above.
+
+aaaaaa
+
+To this layer, that data is just the payload.
+
+aaaaaa
+
+The layer does not open it.
+
+aaaaaa
+
+The layer does not read it.
+
+aaaaaa
+
+The layer only adds its own header.
+
+aaaaaa
+
+Then it sends the data down.
+
+aaaaaa
+
+This is very important.
+
+aaaaaa
+
+A layer does not need to understand the payload.
+
+aaaaaa
+
+It only cares about its own header.
+
+aaaaaa
+
+This is why the layers are separate.
+
+aaaaaa
+
+This is why the layers are simple.
+
+aaaaaa
+
+Wrapping on the sender.
+
+aaaaaa
+
+The names change.
+
+aaaaaa
+
+Now let's go down the layers on the sender's computer.
+
+aaaaaa
+
+Watch the data get a new name at each step.
+
+aaaaaa
+
+We start at the top.
+
+aaaaaa
+
+The Application layer has the data.
+
+aaaaaa
+
+Here we call it "data."
+
+aaaaaa
+
+This is your message.
+
+aaaaaa
+
+Next is the Transport layer.
+
+aaaaaa
+
+It adds a TCP header.
+
+aaaaaa
+
+The header has port numbers.
+
+aaaaaa
+
+Now the data has a new name.
+
+aaaaaa
+
+We call it a "segment."
+
+aaaaaa
+
+Next is the Network layer.
+
+aaaaaa
+
+It adds an IP header.
+
+aaaaaa
+
+The header has IP addresses.
+
+aaaaaa
+
+Now it has a new name again.
+
+aaaaaa
+
+We call it a "packet."
+
+aaaaaa
+
+Next is the Data Link layer.
+
+aaaaaa
+
+It adds a header and also a small tail.
+
+aaaaaa
+
+We call the tail a "trailer."
+
+aaaaaa
+
+The trailer checks for errors.
+
+aaaaaa
+
+Now the data has a new name.
+
+aaaaaa
+
+We call it a "frame."
+
+aaaaaa
+
+Last is the Physical layer.
+
+aaaaaa
+
+It does not add a header.
+
+aaaaaa
+
+It changes the frame into bits.
+
+aaaaaa
+
+Bits are zeros and ones.
+
+aaaaaa
+
+They travel as a signal.
+
+aaaaaa
+
+So the name of the data changes at each layer.
+
+aaaaaa
+
+Data, then segment, then packet, then frame, then bits.
+
+aaaaaa
+
+Five names.
+
+aaaaaa
+
+Same data inside.
+
+aaaaaa
+
+More covers on the outside.
+
+aaaaaa
+
+A memory trick.
+
+aaaaaa
+
+This order is a very common question.
+
+aaaaaa
+
+So let's make it easy to remember.
+
+aaaaaa
+
+The names are: Data, Segment, Packet, Frame, Bits.
+
+aaaaaa
+
+Look at the first letters.
+
+aaaaaa
+
+D, S, P, F, B.
+
+aaaaaa
+
+Now say this funny sentence: "Do Sergeants Pay For Beer?"
+
+aaaaaa
+
+Do is Data.
+
+aaaaaa
+
+Sergeants is Segment.
+
+aaaaaa
+
+Pay is Packet.
+
+aaaaaa
+
+For is Frame.
+
+aaaaaa
+
+Beer is Bits.
+
+aaaaaa
+
+Say it one more time.
+
+aaaaaa
+
+"Do Sergeants Pay For Beer?"
+
+aaaaaa
+
+Data, Segment, Packet, Frame, Bits.
+
+aaaaaa
+
+Nice and easy.
+
+aaaaaa
+
+Unwrapping on the receiver.
+
+aaaaaa
+
+Now the data arrives at the other computer.
+
+aaaaaa
+
+Here we do the opposite.
+
+aaaaaa
+
+We unwrap.
+
+aaaaaa
+
+This is de-encapsulation.
+
+aaaaaa
+
+The data goes up the layers.
+
+aaaaaa
+
+First, the Physical layer gets the bits.
+
+aaaaaa
+
+It puts them together into a frame.
+
+aaaaaa
+
+Next, the Data Link layer checks the error trailer.
+
+aaaaaa
+
+It reads the MAC address.
+
+aaaaaa
+
+Then it takes off its header and trailer.
+
+aaaaaa
+
+Now we have a packet again.
+
+aaaaaa
+
+Next, the Network layer reads the IP address.
+
+aaaaaa
+
+Then it takes off the IP header.
+
+aaaaaa
+
+Now we have a segment again.
+
+aaaaaa
+
+Next, the Transport layer reads the port.
+
+aaaaaa
+
+It puts the segments in the right order.
+
+aaaaaa
+
+Then it takes off its header.
+
+aaaaaa
+
+Now we have the data again.
+
+aaaaaa
+
+Last, the Application layer gets the data.
+
+aaaaaa
+
+It gives the data to the right app.
+
+aaaaaa
+
+For example, your web browser.
+
+aaaaaa
+
+Do you see the pattern?
+
+aaaaaa
+
+Each layer reads its own header.
+
+aaaaaa
+
+Then each layer removes its own header.
+
+aaaaaa
+
+Then it passes the rest up.
+
+aaaaaa
+
+The header from one layer on the sender is read by the same layer on the receiver.
+
+aaaaaa
+
+They are partners.
+
+aaaaaa
+
+They talk to each other.
+
+aaaaaa
+
+A real example.
+
+aaaaaa
+
+The size grows.
+
+aaaaaa
+
+Let's see a real example with numbers.
+
+aaaaaa
+
+This shows why headers have a cost.
+
+aaaaaa
+
+Say an app sends one hundred bytes of data.
+
+aaaaaa
+
+Just one hundred bytes.
+
+aaaaaa
+
+The Transport layer adds a TCP header.
+
+aaaaaa
+
+It is twenty bytes.
+
+aaaaaa
+
+So now we have one hundred and twenty bytes.
+
+aaaaaa
+
+This is the segment.
+
+aaaaaa
+
+The Network layer adds an IP header.
+
+aaaaaa
+
+It is also twenty bytes.
+
+aaaaaa
+
+So now we have one hundred and forty bytes.
+
+aaaaaa
+
+This is the packet.
+
+aaaaaa
+
+The Data Link layer adds an Ethernet header.
+
+aaaaaa
+
+It is fourteen bytes.
+
+aaaaaa
+
+It also adds a trailer.
+
+aaaaaa
+
+It is four bytes.
+
+aaaaaa
+
+So we add eighteen bytes.
+
+aaaaaa
+
+Now we have one hundred and fifty-eight bytes.
+
+aaaaaa
+
+This is the frame.
+
+aaaaaa
+
+So the data started at one hundred bytes.
+
+aaaaaa
+
+It ended at one hundred and fifty-eight bytes.
+
+aaaaaa
+
+The extra bytes are the headers.
+
+aaaaaa
+
+We call this "overhead."
+
+aaaaaa
+
+It is the cost of using layers.
+
+aaaaaa
+
+But it is a good deal.
+
+aaaaaa
+
+In return, we get simple layers.
+
+aaaaaa
+
+And we can send data across many networks.
+
+aaaaaa
+
+Quick summary.
+
+aaaaaa
+
+Let's review the key points.
+
+aaaaaa
+
+Encapsulation means wrapping.
+
+aaaaaa
+
+On the sender, each layer adds a header.
+
+aaaaaa
+
+The Data Link layer also adds a trailer.
+
+aaaaaa
+
+De-encapsulation means unwrapping.
+
+aaaaaa
+
+On the receiver, each layer reads and removes its own header.
+
+aaaaaa
+
+The name of the data changes at each layer.
+
+aaaaaa
+
+Data, then segment, then packet, then frame, then bits.
+
+aaaaaa
+
+Remember: "Do Sergeants Pay For Beer?"
+
+aaaaaa
+
+And one big idea.
+
+aaaaaa
+
+A layer does not read its payload.
+
+aaaaaa
+
+It only handles its own header.
+
+aaaaaa
+
+This keeps the layers simple and separate.
+
+aaaaaa
+
+Practice questions.
+
+aaaaaa
+
+Now let's practice.
+
+aaaaaa
+
+I will ask three questions.
+
+aaaaaa
+
+You can pause and think.
+
+aaaaaa
+
+Question one.
+
+aaaaaa
+
+Put the data unit names in order.
+
+aaaaaa
+
+Go from the Application layer down to the Physical layer.
+
+aaaaaa
+
+And say which layer goes with each name.
+
+aaaaaa
+
+Question two.
+
+aaaaaa
+
+The Network layer does not read the TCP segment inside its packet.
+
+aaaaaa
+
+Why not?
+
+aaaaaa
+
+Question three.
+
+aaaaaa
+
+An app sends two hundred bytes of data.
+
+aaaaaa
+
+The TCP header is twenty bytes.
+
+aaaaaa
+
+The IP header is twenty bytes.
+
+aaaaaa
+
+The Ethernet header is fourteen bytes.
+
+aaaaaa
+
+The trailer is four bytes.
+
+aaaaaa
+
+What is the size of the final frame?
+
+aaaaaa
+
+Now, here are the answers.
+
+aaaaaa
+
+For question one.
+
+aaaaaa
+
+The order is: Data at the Application layer.
+
+aaaaaa
+
+Segment at the Transport layer.
+
+aaaaaa
+
+Packet at the Network layer.
+
+aaaaaa
+
+Frame at the Data Link layer.
+
+aaaaaa
+
+Bits at the Physical layer.
+
+aaaaaa
+
+For question two.
+
+aaaaaa
+
+To the Network layer, the segment is just payload.
+
+aaaaaa
+
+It is just "data to carry."
+
+aaaaaa
+
+The Network layer only uses its IP header.
+
+aaaaaa
+
+It uses the IP address to find the path.
+
+aaaaaa
+
+Reading the segment is the job of the Transport layer on the other computer.
+
+aaaaaa
+
+This is the rule of separate layers.
+
+aaaaaa
+
+For question three.
+
+aaaaaa
+
+Let's add.
+
+aaaaaa
+
+Two hundred, plus twenty for TCP, plus twenty for IP, plus fourteen for Ethernet, plus four for the trailer.
+
+aaaaaa
+
+That is two hundred and fifty-eight bytes.
+
+aaaaaa
+
+So the final frame is two hundred and fifty-eight bytes.
+
+aaaaaa
+
+Goodbye.
+
+aaaaaa
+
+That is all for today.
+
+aaaaaa
+
+Now you know encapsulation.
+
+aaaaaa
+
+You know it means wrapping.
+
+aaaaaa
+
+You know de-encapsulation means unwrapping.
+
+aaaaaa
+
+And you know the five names of the data.
+
+aaaaaa
+
+Great job.
+
+aaaaaa
+
+Thank you for listening.
+
+aaaaaa
+
+Practice the funny sentence every day.
+
+aaaaaa
+
+"Do Sergeants Pay For Beer?"
+
+aaaaaa
+
+See you next time.
+
+aaaaaa
+
+Bye bye.
