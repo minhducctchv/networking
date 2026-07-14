@@ -1,0 +1,19 @@
+ffmpeg -i file.mkv -acodec pcm_s16le -ar 44100 -ac 2 file.wav
+
+
+ffmpeg -loop 1 -i bg.jpg -i final_01.wav \
+-vf "scale=1280:720" \
+-c:v libx264 -preset veryfast -tune stillimage \
+-crf 40 \
+-c:a flac \
+-shortest output.mkv
+
+chuyển subtitle này sang dạng subtitle chuẩn của youtube như sau
+```
+1
+00:00:00,000 --> 00:00:04,000
+Hello everyone, and welcome to my channel.
+```
+trong nội dung hiện tại, gọi thời gian trên mỗi câu subtitle là x seconds, cách chuyển đổi nhwu sau:
+thời gian bắt đầu = x + 0.25
+thời gian kết thúc = x của câu sau - 0.25
