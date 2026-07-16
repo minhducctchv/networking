@@ -17,3 +17,8 @@ Hello everyone, and welcome to my channel.
 trong nội dung hiện tại, gọi thời gian trên mỗi câu subtitle là x seconds, cách chuyển đổi nhwu sau:
 thời gian bắt đầu = x + 0.25
 thời gian kết thúc = x của câu sau - 0.25
+
+
+
+dịch chuyển các subtitle lên sớm hơn 0.1s, giữ nguyên end time của subtitle cuối cùng
+
