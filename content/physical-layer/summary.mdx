@@ -14,7 +14,8 @@ Chương này đã đi xuống tận đáy ngăn xếp mạng để trả lời 
 
 - **Bandwidth** là dung lượng tối đa lý thuyết; **throughput** là tốc độ thực tế đạt được, bị giới hạn bởi **bottleneck link**.
 - **Latency** = tổng của **transmission + propagation + queuing + processing delay**; tăng bandwidth chỉ giảm transmission delay, không giảm propagation delay.
-- **RTT** (round-trip time) là thời gian đi và về; nó quyết định thời gian TCP handshake, TLS handshake, và các quyết định về timeout ứng dụng.
+- **RTT** (round-trip time) là thời gian đi và về; nó quyết định thời gian TCP handshake, TLS handshake, và các quyết định về timeout ứng dụng. Vì nhiều thao tác tốn nhiều vòng khứ hồi, giảm số round trip (keep-alive, HTTP/2, CDN) thường quan trọng hơn tăng bandwidth.
+- **Bandwidth-delay product** = bandwidth × RTT là lượng dữ liệu đang "bay"; trên **long fat network** (băng thông cao, RTT cao), một luồng TCP có send window nhỏ hơn BDP sẽ không lấp đầy được đường truyền — phải bật window scaling hoặc chạy nhiều luồng song song.
 - **Attenuation** làm tín hiệu yếu dần theo khoảng cách, phụ thuộc môi trường và quyết định giới hạn chiều dài liên kết.
 
 ## Bài tập ôn tập

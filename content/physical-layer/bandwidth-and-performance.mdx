@@ -2,7 +2,7 @@ import { Callout } from "nextra/components";
 
 # Băng thông & hiệu năng
 
-Sau khi đã biết bit đi qua môi trường nào và được mã hóa thành tín hiệu ra sao, câu hỏi tiếp theo là: liên kết này **nhanh** đến mức nào? "Nhanh" thực ra gồm nhiều khái niệm khác nhau mà người mới hay gộp làm một — bandwidth, throughput và latency. Bài học này tách bạch chúng, phân tích các thành phần của độ trễ, giải thích hiện tượng attenuation, và đưa ra công thức để bạn tự tính được thời gian truyền của một liên kết cụ thể.
+Sau khi đã biết bit đi qua môi trường vật lý nào, câu hỏi tiếp theo là: liên kết này **nhanh** đến mức nào? "Nhanh" thực ra gồm nhiều khái niệm khác nhau mà người mới hay gộp làm một — bandwidth, throughput và latency. Bài học này tách bạch chúng, phân tích các thành phần của độ trễ, làm rõ hai con số dev gặp hằng ngày là **RTT** và **bandwidth-delay product**, giải thích hiện tượng attenuation, và đưa ra công thức để bạn tự tính được thời gian truyền của một liên kết cụ thể.
 
 ## Bandwidth và throughput
 
@@ -37,6 +37,26 @@ flowchart LR
   trường (bit bay qua dây mất bao lâu). Tăng bandwidth chỉ giảm cái thứ nhất.
 </Callout>
 
+## RTT và "số vòng khứ hồi" — con số dev quan tâm nhất
+
+**RTT** (round-trip time — thời gian một gói đi từ nguồn tới đích _và_ gói trả lời quay ngược về nguồn) chính là con số bạn thấy mỗi lần chạy `ping`. Xấp xỉ `RTT ≈ 2 × latency một chiều`; và vì propagation delay thường lấn át với gói nhỏ đi xa, ta có một **sàn vật lý** `RTT ≈ 2 × propagation delay` mà không phần mềm nào phá được.
+
+Với developer, RTT thường quan trọng hơn bandwidth, vì nhiều thao tác mạng tốn _nhiều vòng khứ hồi_ trước khi byte dữ liệu hữu ích đầu tiên về tới:
+
+- **TCP three-way handshake** tốn 1 RTT trước khi gửi được byte dữ liệu đầu tiên.
+- **TLS handshake** tốn thêm 1 RTT (TLS 1.3) hoặc 2 RTT (TLS 1.2).
+- Vậy một request HTTPS qua kết nối mới toanh mất ~2–3 RTT chỉ để _thiết lập_, trước cả khi server chạy dòng code đầu tiên. Với RTT 150 ms xuyên lục địa, riêng phần thiết lập đã ngốn 300–450 ms.
+
+<Callout type="info">
+  Đây là lý do phần lớn tối ưu mạng ở tầng cao đều xoay quanh việc **cắt giảm số
+  vòng khứ hồi**: **keep-alive / connection pool** (trả phí handshake một lần
+  rồi tái dùng), **HTTP/2 multiplexing** (nhiều request trên một kết nối), **TLS
+  1.3 và 0-RTT resumption**, và **đặt server gần người dùng** (CDN/edge) để hạ
+  chính RTT.
+</Callout>
+
+Một hệ quả thực tế nữa: **giao thức "chatty" bị phạt nặng trên WAN**. Nếu code thực hiện N truy vấn _tuần tự_ (kinh điển là N+1 query của ORM), tổng thời gian ≥ `N × RTT`. Trên LAN (RTT < 1 ms) gần như vô hình, nhưng qua WAN (RTT 150 ms) thì 10 vòng tuần tự = 1.5 s chỉ riêng độ trễ mạng — gộp request (batching) hay giảm số round trip thường hiệu quả hơn nhiều so với tăng bandwidth. RTT cũng là mốc để đặt **timeout**: timeout phải lớn hơn RTT thực tế cộng thời gian xử lý, nếu không bạn sẽ retry nhầm khi mạng chỉ đang chậm chứ chưa hỏng.
+
 ## Attenuation — vì sao tín hiệu yếu dần
 
 **Attenuation** (suy hao — sự giảm cường độ tín hiệu theo khoảng cách khi nó lan truyền qua môi trường) là lý do mọi liên kết đều có giới hạn chiều dài. Tín hiệu càng đi xa càng yếu; tới một điểm nó yếu đến mức đầu thu không phân biệt nổi `0` với `1`, gây lỗi bit.
@@ -67,12 +87,37 @@ transmission delay = 12 000 bit / 1 × 10^9 bps = 12 µs
 
 Với gói nhỏ này, transmission delay gần như bằng 0; thời gian đi chủ yếu là **propagation delay**. Đây là lý do với gói nhỏ đi đường dài (ví dụ ping qua vệ tinh), tăng bandwidth gần như không giúp giảm latency — bit vẫn phải mất thời gian "bay" qua khoảng cách vật lý.
 
+## Bandwidth-delay product — vì sao đường rộng vẫn truyền chậm
+
+**Bandwidth-delay product** (BDP — tích của bandwidth và RTT, cho biết tối đa bao nhiêu dữ liệu đang "trên đường bay" mà chưa được ACK) giải thích một nghịch lý dev hay gặp: đường 1 Gbps giữa hai châu lục mà copy một file vẫn chỉ đạt vài chục Mbps.
+
+Công thức: `BDP = bandwidth × RTT`. Ví dụ với 1 Gbps và RTT 150 ms:
+
+```text
+BDP = 1 × 10^9 bps × 0.15 s
+    = 150 × 10^6 bit
+    = 18.75 MB
+```
+
+Để "lấp đầy đường ống" (keep the pipe full), TCP phải có **send window** (lượng dữ liệu được phép gửi mà chưa cần ACK) ≥ ~18.75 MB. Nếu window — thường bị chặn bởi buffer mặc định của hệ điều hành — nhỏ hơn BDP, throughput bị giới hạn ở `window / RTT`, thấp hơn nhiều so với bandwidth vật lý. Những đường "băng thông cao + RTT cao" như vậy gọi là **long fat network (LFN)**.
+
+<Callout type="info">
+  Hệ quả cho dev/ops: trên đường xuyên lục địa, **một luồng TCP đơn lẻ thường
+  không lấp đầy được bandwidth**. Cách khắc phục là bật **TCP window scaling**
+  và tăng buffer, hoặc chạy **nhiều luồng song song** (đúng cách các trình tải
+  nhiều kết nối, `rsync`/`aria2`, hay client của object storage vẫn làm). Đây là
+  ví dụ rõ nhất cho thấy con số ở tầng vật lý — bandwidth và RTT — trực tiếp
+  chặn throughput mà ứng dụng của bạn đạt được.
+</Callout>
+
 ## Tóm tắt nhanh
 
 - **Bandwidth** là dung lượng tối đa lý thuyết; **throughput** là tốc độ thực tế đạt được, bị giới hạn bởi **bottleneck link**.
 - **Latency** = tổng của **transmission**, **propagation**, **queuing**, và **processing delay**.
 - `transmission delay = kích thước gói / bandwidth`; `propagation delay = khoảng cách / tốc độ lan truyền`.
 - Tăng bandwidth chỉ giảm transmission delay, không giảm propagation delay.
+- **RTT** ≈ 2 × latency một chiều; nhiều thao tác tốn _nhiều_ vòng khứ hồi (TCP handshake 1 RTT, TLS 1–2 RTT), nên giảm số round trip (keep-alive, HTTP/2, CDN) thường quan trọng hơn tăng bandwidth. RTT cũng là mốc để đặt timeout.
+- **Bandwidth-delay product** = bandwidth × RTT là lượng dữ liệu "đang bay"; trên **long fat network** (băng thông cao, RTT cao), một luồng TCP có window nhỏ hơn BDP sẽ không lấp đầy được đường truyền.
 - **Attenuation** làm tín hiệu yếu dần theo khoảng cách; mức suy hao phụ thuộc môi trường (copper suy hao nhiều, fiber suy hao ít), quyết định giới hạn chiều dài liên kết.
 
 ## Bài tập
@@ -81,17 +126,19 @@ Với gói nhỏ này, transmission delay gần như bằng 0; thời gian đi c
 
 1. Một liên kết có bandwidth **100 Mbps**, dài **600 km**, tốc độ lan truyền `2 × 10^8 m/s`. Tính **transmission delay** và **propagation delay** khi gửi một gói **2500 byte** (`= 20 000 bit`). Thành phần nào lớn hơn?
 2. Vẫn liên kết trên, nếu ta gửi một file **50 MB** (`= 400 × 10^6 bit`), tính lại transmission delay. Bây giờ thành phần nào lấn át, và nên tăng gì để truyền nhanh hơn?
+3. Một đường truyền **500 Mbps** giữa hai region có **RTT 120 ms**. Tính **bandwidth-delay product** (đổi ra MB). Nếu send window của TCP chỉ **2 MB**, throughput tối đa của một luồng là bao nhiêu, và vì sao nó thấp hơn nhiều so với 500 Mbps?
 
 ### Câu hỏi lý thuyết
 
-3. Một người than phiền: "Tôi đã nâng đường truyền từ 100 Mbps lên 1 Gbps mà ping tới server game ở nước ngoài vẫn 180 ms không đổi." Dựa vào các thành phần delay và attenuation, giải thích vì sao bandwidth cao hơn không cải thiện được con số ping này.
+4. Một người than phiền: "Tôi đã nâng đường truyền từ 100 Mbps lên 1 Gbps mà ping tới server game ở nước ngoài vẫn 180 ms không đổi." Dựa vào các thành phần delay và attenuation, giải thích vì sao bandwidth cao hơn không cải thiện được con số ping này.
 
 <details>
   <summary>Đáp án & gợi ý</summary>
 
 1. `transmission delay = 20 000 / (100 × 10^6) = 0.0002 s = 0.2 ms`. `propagation delay = 600 × 10^3 m / (2 × 10^8) = 0.003 s = 3 ms`. **Propagation delay lớn hơn** (3 ms so với 0.2 ms) vì gói nhỏ nhưng đường dài.
 2. `transmission delay = 400 × 10^6 / (100 × 10^6) = 4 s`. Giờ **transmission delay (4 s) lấn át** propagation delay (vẫn 3 ms). Muốn nhanh hơn nên **tăng bandwidth** (hoặc giảm kích thước/nén dữ liệu), vì đó là thành phần đang chi phối.
-3. Ping ~180 ms chủ yếu là **propagation delay** (cộng queuing) do khoảng cách địa lý xa, mà propagation delay = khoảng cách / tốc độ lan truyền — không phụ thuộc bandwidth. Tăng bandwidth chỉ rút ngắn **transmission delay**, vốn đã rất nhỏ với gói ping. Khoảng cách vật lý và tốc độ ánh sáng trong môi trường (cùng attenuation buộc tín hiệu phải đi qua nhiều chặng/repeater) mới quyết định con số này, nên ping gần như không đổi.
+3. `BDP = 500 × 10^6 bps × 0.12 s = 60 × 10^6 bit = 7.5 MB`. Với send window chỉ 2 MB, mỗi RTT chỉ gửi được 2 MB rồi phải chờ ACK, nên throughput tối đa ≈ `window / RTT = 2 MB / 0.12 s ≈ 16.7 MB/s ≈ 133 Mbps` — chỉ ~27% của 500 Mbps. Muốn lấp đầy đường phải tăng window ≥ BDP (bật **TCP window scaling**) hoặc chạy **nhiều luồng song song**.
+4. Ping ~180 ms chủ yếu là **propagation delay** (cộng queuing) do khoảng cách địa lý xa, mà propagation delay = khoảng cách / tốc độ lan truyền — không phụ thuộc bandwidth. Tăng bandwidth chỉ rút ngắn **transmission delay**, vốn đã rất nhỏ với gói ping. Khoảng cách vật lý và tốc độ ánh sáng trong môi trường (cùng attenuation buộc tín hiệu phải đi qua nhiều chặng/repeater) mới quyết định con số này, nên ping gần như không đổi.
 
 </details>
 

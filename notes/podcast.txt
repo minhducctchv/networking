@@ -1,0 +1,369 @@
+Podcast: The Basics of Computer Networks. 
+
+Hello! 
+
+Welcome to the show. 
+
+This is a podcast in easy English. 
+
+Today we talk about computer networks. 
+
+This is a summary of chapter one. 
+
+We use short and simple words. 
+
+Are you ready? 
+
+Let's go! 
+
+Part 1: What is a network? 
+
+First, what is a computer network? 
+
+A network is a group of devices. 
+
+The devices connect together. 
+
+They share data. 
+
+For a network, we need three things. 
+
+One: an end system. 
+
+This is a device. 
+
+For example, your computer or your phone. 
+
+Two: a medium. 
+
+This is the road for the data. 
+
+It can be a cable. 
+
+It can also be radio, like Wi-Fi. 
+
+Three: helper devices in the middle. 
+
+They move the data the right way. 
+
+Now, an important word: protocol. 
+
+A protocol is a set of rules. 
+
+Think about a game. 
+
+A game has rules. 
+
+Two computers use the same rules. 
+
+So they can understand each other. 
+
+The rules say three things. 
+
+Same words. 
+
+Same meaning. 
+
+And the right time to talk. 
+
+One more idea: layers. 
+
+We do not build a network in one big piece. 
+
+We cut the work into layers. 
+
+Each layer has one job. 
+
+It is like a team. 
+
+Each person does one job. 
+
+This makes the network easy to build. 
+
+And it makes problems easy to fix. 
+
+Part 2: The OSI model. 
+
+Next, the OSI model. 
+
+OSI is a map. 
+
+We call it a reference model. 
+
+It has seven layers. 
+
+Here are the names, from low to high. 
+
+Layer one: Physical. 
+
+Layer two: Data Link. 
+
+Layer three: Network. 
+
+Layer four: Transport. 
+
+Layer five: Session. 
+
+Layer six: Presentation. 
+
+Layer seven: Application. 
+
+Each layer has its own job. 
+
+The low layers are near the hardware. 
+
+They are close to the cables. 
+
+The high layers are near you. 
+
+They are close to the app you use. 
+
+Part 3: The TCP/IP model. 
+
+Now, the TCP/IP model. 
+
+This model is smaller. 
+
+It has four layers. 
+
+The names are Application, Transport, Internet, and Network Access. 
+
+It is like the OSI map, but shorter. 
+
+The top three OSI layers become one. 
+
+We call it Application. 
+
+The bottom two OSI layers become one. 
+
+We call it Network Access. 
+
+Why do we join them? 
+
+Because they work together in real life. 
+
+The most important layer is the Internet layer. 
+
+It uses IP. 
+
+IP is the meeting point. 
+
+Every device uses IP in the middle. 
+
+So all devices can talk to each other. 
+
+Part 4: Packing the data. 
+
+Now, a fun part. 
+
+How do we pack data? 
+
+The big word is encapsulation. 
+
+But the idea is easy. 
+
+Think about a letter. 
+
+You write a letter. 
+
+You put it in an envelope. 
+
+Then you put that in another envelope. 
+
+Each layer adds one envelope. 
+
+We call this envelope a header. 
+
+The data goes down the layers. 
+
+Each layer adds a header. 
+
+On the other side, the data goes up. 
+
+Each layer opens one envelope. 
+
+It removes one header. 
+
+A layer only reads its own envelope. 
+
+It does not open the others. 
+
+The data also gets a new name at each step. 
+
+At the top, it is Data. 
+
+Then it is a Segment. 
+
+Then it is a Packet. 
+
+Then it is a Frame. 
+
+At the bottom, it is just Bits. 
+
+So: Data, Segment, Packet, Frame, Bits. 
+
+Same data. 
+
+But a new name at each layer. 
+
+Part 5: Two ways to send data. 
+
+Now, let's send the data. 
+
+There are two ways. 
+
+The first way is circuit switching. 
+
+It makes one special path for two people. 
+
+This path is only for them. 
+
+It is like an old phone call. 
+
+The line is open all the time. 
+
+This is steady and safe. 
+
+But it can waste space. 
+
+When you do not talk, the line is still busy. 
+
+The second way is packet switching. 
+
+We cut the data into small packets. 
+
+Each packet finds its own way. 
+
+The packets share the same road. 
+
+This is how the Internet works. 
+
+It uses the road well. 
+
+But the time can change. 
+
+Some packets are fast. 
+
+Some packets are slow. 
+
+Part 6: The shapes and the size. 
+
+Now, the shape of a network. 
+
+We call this topology. 
+
+There are four shapes. 
+
+Number one: the bus. 
+
+All computers connect to one main line. 
+
+It is simple and cheap. 
+
+But if the main line breaks, all the network stops. 
+
+Number two: the star. 
+
+All computers connect to one center. 
+
+If one computer breaks, the others are okay. 
+
+Today, most homes and offices use a star. 
+
+Number three: the ring. 
+
+The computers connect in a circle. 
+
+Data goes one way. 
+
+Number four: the mesh. 
+
+Many computers connect to each other. 
+
+There are many paths. 
+
+This is very safe. 
+
+But it needs many cables. 
+
+Now, the size of a network. 
+
+A LAN is small. 
+
+It is in one place. 
+
+For example, one office or one house. 
+
+A MAN is bigger. 
+
+It covers one city. 
+
+A WAN is very big. 
+
+It connects places far away. 
+
+The Internet is a WAN. 
+
+So, from small to big: LAN, MAN, WAN. 
+
+Quick review. 
+
+Let's remember the big ideas. 
+
+One: a network shares data. 
+
+It uses protocols. 
+
+Protocols are rules. 
+
+Two: the OSI map has seven layers. 
+
+The TCP/IP map has four layers. 
+
+Three: each layer adds a header. 
+
+This is encapsulation. 
+
+Four: the data changes name. 
+
+Data, Segment, Packet, Frame, Bits. 
+
+Five: the Internet uses packet switching. 
+
+Small quiz. Stop and think. 
+
+Question one: A protocol is a set of... what? 
+
+... Yes! 
+
+A set of rules. 
+
+Question two: How many layers are in the OSI model? 
+
+... Yes! 
+
+Seven layers. 
+
+Question three: What is the name of the data at the Network layer? 
+
+... Yes! 
+
+A packet. 
+
+Question four: The Internet uses circuit switching or packet switching? 
+
+... Yes! 
+
+It uses packet switching. 
+
+Okay, that is all for today. 
+
+Good job! 
+
+Now you know the basics of computer networks. 
+
+Thank you for listening. 
+
+Come back next time and practice again. 
+
+Bye bye!
