@@ -1,0 +1,417 @@
+PODCAST: BANDWIDTH AND PERFORMANCE. [pause]
+
+Hello, and welcome to the show! [pause]
+
+This is your networking podcast. [pause]
+
+Today we talk about speed. [pause]
+
+When we use the internet, we want it to be fast. [pause]
+
+But what is "fast"? [pause]
+
+It is not just one thing. [pause]
+
+There are many parts. [pause]
+
+Today we learn about them. [pause]
+
+We will talk about bandwidth. [pause]
+
+We will talk about throughput. [pause]
+
+We will talk about latency. [pause]
+
+And we will talk about a few more words. [pause]
+
+Do not worry. [pause]
+
+I will keep it simple. [pause]
+
+Let's start! [pause]
+
+First, let's talk about bandwidth. [pause]
+
+Think about a water pipe. [pause]
+
+A pipe can be small or big. [pause]
+
+A big pipe can carry a lot of water. [pause]
+
+A small pipe can carry only a little water. [pause]
+
+Bandwidth is like the size of the pipe. [pause]
+
+It is the biggest amount of data a link can carry. [pause]
+
+We measure it in bits per second. [pause]
+
+For example, your internet plan may say "one gigabit per second." [pause]
+
+That number is the bandwidth. [pause]
+
+It is the maximum. [pause]
+
+It is what the link can do in the best case. [pause]
+
+Now, let's talk about throughput. [pause]
+
+Throughput is the real speed. [pause]
+
+It is how much data really moves right now. [pause]
+
+It is like the water that really flows in the pipe. [pause]
+
+Here is the key idea. [pause]
+
+Throughput is almost always smaller than bandwidth. [pause]
+
+Why? [pause]
+
+Because there are problems on the way. [pause]
+
+The network can be busy. [pause]
+
+There can be errors. [pause]
+
+There is extra work for the computer. [pause]
+
+Also, there is the "bottleneck." [pause]
+
+A bottleneck is the slowest part of the road. [pause]
+
+If one part is slow, the whole trip is slow. [pause]
+
+So remember this: bandwidth is what the link CAN do. [pause]
+
+Throughput is what the link REALLY does. [pause]
+
+A one gigabit link can give you only three hundred megabits, if one part on the way is slow. [pause]
+
+Now let's talk about latency. [pause]
+
+Latency is time. [pause]
+
+It is the time for one bit to go from A to B. [pause]
+
+It is a delay. [pause]
+
+Here is a surprise. [pause]
+
+You can have a very big pipe, but the delay can still be high. [pause]
+
+Bandwidth and latency are not the same thing. [pause]
+
+The total delay has four parts. [pause]
+
+Let's look at them one by one. [pause]
+
+Part one is transmission delay. [pause]
+
+This is the time to push all the bits onto the wire. [pause]
+
+A big file takes more time. [pause]
+
+A small file takes less time. [pause]
+
+More bandwidth makes this part smaller. [pause]
+
+Part two is propagation delay. [pause]
+
+This is the time for one bit to travel the wire. [pause]
+
+It depends on distance. [pause]
+
+A long wire takes more time. [pause]
+
+A short wire takes less time. [pause]
+
+This is like the time light needs to travel. [pause]
+
+Part three is queuing delay. [pause]
+
+This is waiting time. [pause]
+
+The bit waits in a line inside a router. [pause]
+
+When the network is busy, the line is long. [pause]
+
+Part four is processing delay. [pause]
+
+This is the time for the router to look at the packet and choose the way. [pause]
+
+It is usually very small. [pause]
+
+Here is an important tip. [pause]
+
+Do not mix up transmission delay and propagation delay. [pause]
+
+Transmission delay is about the size of the file and the bandwidth. [pause]
+
+Propagation delay is about the distance. [pause]
+
+More bandwidth helps only the first one. [pause]
+
+It does not help the distance. [pause]
+
+Now, a very important word for developers. [pause]
+
+It is RTT. [pause]
+
+RTT means "round-trip time." [pause]
+
+It is the time for a packet to go to B, and for the answer to come back to A. [pause]
+
+It is a full trip, there and back. [pause]
+
+You see this number when you use "ping." [pause]
+
+Ping shows you the RTT. [pause]
+
+RTT is often more important than bandwidth. [pause]
+
+Why? [pause]
+
+Because many tasks need many trips before you get useful data. [pause]
+
+Let me give you an example. [pause]
+
+To start a TCP connection, you need one round trip first. [pause]
+
+To start a secure connection with TLS, you need one or two more round trips. [pause]
+
+So a new secure web request can take two or three round trips, only to get ready! [pause]
+
+And this is before the server does any real work. [pause]
+
+Imagine the RTT is one hundred fifty milliseconds. [pause]
+
+That is a long trip, maybe across the world. [pause]
+
+Just getting ready can take three hundred to four hundred fifty milliseconds. [pause]
+
+That is slow. [pause]
+
+This is why we try to cut the number of round trips. [pause]
+
+We reuse connections. [pause]
+
+We keep them open. [pause]
+
+We use HTTP/2. [pause]
+
+We use faster TLS. [pause]
+
+And we put servers near the user, close to their city. [pause]
+
+All of this makes the trips fewer or shorter. [pause]
+
+One more thing. [pause]
+
+Some programs are "chatty." [pause]
+
+They ask, and wait. [pause]
+
+They ask again, and wait again. [pause]
+
+On a local network, this is fine, because the RTT is tiny. [pause]
+
+But across the world, ten trips can cost more than one second, only for the network! [pause]
+
+So it is better to ask for many things at one time. [pause]
+
+This helps more than a bigger pipe. [pause]
+
+And remember, RTT helps you set a timeout. [pause]
+
+A timeout must be longer than the real RTT. [pause]
+
+If not, you give up too early, when the network is only slow, not broken. [pause]
+
+Next word: attenuation. [pause]
+
+Attenuation means the signal gets weak. [pause]
+
+When a signal travels far, it becomes weaker and weaker. [pause]
+
+Think about your friend calling you from far away. [pause]
+
+Near you, the voice is clear. [pause]
+
+Very far away, the voice is soft, and you cannot hear the words. [pause]
+
+Signals are the same. [pause]
+
+If the signal is too weak, the other side cannot tell a zero from a one. [pause]
+
+This makes errors. [pause]
+
+How much a signal gets weak depends on the material. [pause]
+
+Copper wire gets weak fast. [pause]
+
+So copper is only good for a short distance, about one hundred meters. [pause]
+
+Fiber, made of glass, gets weak very slowly. [pause]
+
+So fiber can go many kilometers. [pause]
+
+To fight attenuation, we use a repeater. [pause]
+
+A repeater makes the signal strong again. [pause]
+
+Or, for a long trip, we just choose fiber. [pause]
+
+Let's do a small example. [pause]
+
+Let's send a file and count the time. [pause]
+
+We send a file of one megabyte. [pause]
+
+That is eight million bits. [pause]
+
+The link is ten megabits per second. [pause]
+
+The wire is three thousand kilometers long. [pause]
+
+First, the transmission delay. [pause]
+
+We take the size and divide by the bandwidth. [pause]
+
+The answer is zero point eight seconds. [pause]
+
+Second, the propagation delay. [pause]
+
+We take the distance and divide by the speed. [pause]
+
+The answer is about fifteen milliseconds. [pause]
+
+That is very small. [pause]
+
+So the total is about zero point eight seconds. [pause]
+
+Here, the transmission delay is the big part. [pause]
+
+So to go faster, we should get more bandwidth. [pause]
+
+But now, let's send a tiny packet. [pause]
+
+Only one thousand five hundred bytes. [pause]
+
+And the link is fast, one gigabit per second. [pause]
+
+The transmission delay is only twelve microseconds. [pause]
+
+That is almost nothing! [pause]
+
+For this tiny packet, the time is mostly the propagation delay, the travel time. [pause]
+
+So more bandwidth does not help. [pause]
+
+The bit still needs time to fly across the distance. [pause]
+
+This is why, for a small packet on a long trip, like a ping over a satellite, a bigger pipe does not lower the delay. [pause]
+
+Last big idea. [pause]
+
+It is the bandwidth-delay product. [pause]
+
+Here is a strange problem. [pause]
+
+You have a fast link, one gigabit, between two continents. [pause]
+
+You copy a file. [pause]
+
+But you get only a few tens of megabits. [pause]
+
+Why is it so slow? [pause]
+
+The bandwidth-delay product explains this. [pause]
+
+It tells you how much data can be "in flight" on the road at one time, not yet confirmed. [pause]
+
+The formula is simple. [pause]
+
+You take the bandwidth and multiply by the RTT. [pause]
+
+Let's try it. [pause]
+
+One gigabit per second, times an RTT of one hundred fifty milliseconds. [pause]
+
+The answer is about eighteen point seven five megabytes. [pause]
+
+So, to keep the pipe full, TCP must be allowed to send about eighteen megabytes before it waits for an answer. [pause]
+
+This amount is called the "window." [pause]
+
+Here is the problem. [pause]
+
+The window is often small, because of the computer's default setting. [pause]
+
+If the window is smaller than the bandwidth-delay product, the speed drops. [pause]
+
+The speed is only the window divided by the RTT. [pause]
+
+That is much less than the real bandwidth. [pause]
+
+We have a name for these links. [pause]
+
+High bandwidth, high RTT. [pause]
+
+We call them "long fat networks." [pause]
+
+So what do we do? [pause]
+
+On a long trip, one single TCP flow often cannot fill the pipe. [pause]
+
+We can turn on window scaling. [pause]
+
+We can make the buffer bigger. [pause]
+
+Or we can run many flows at the same time. [pause]
+
+This is what good download tools do. [pause]
+
+This is a great example. [pause]
+
+The numbers from the physical layer, the bandwidth and the RTT, control the real speed your app can get. [pause]
+
+Okay, let's review. [pause]
+
+Here are the main ideas. [pause]
+
+Bandwidth is the maximum. [pause]
+
+Throughput is the real speed. [pause]
+
+The slowest part, the bottleneck, sets the limit. [pause]
+
+Latency has four parts: transmission, propagation, queuing, and processing. [pause]
+
+More bandwidth lowers only the transmission delay. [pause]
+
+It does not lower the distance delay. [pause]
+
+RTT is the round trip. [pause]
+
+Many tasks need many trips. [pause]
+
+So cutting the number of trips is often better than a bigger pipe. [pause]
+
+The bandwidth-delay product is the data "in flight." [pause]
+
+On a long fat network, a small window cannot fill the pipe. [pause]
+
+And attenuation makes the signal weak over distance. [pause]
+
+The material matters: copper is weak, fiber is strong. [pause]
+
+That is all for today. [pause]
+
+Thank you for listening! [pause]
+
+I hope this was clear and simple. [pause]
+
+Practice these words, and see you next time. [pause]
+
+Bye bye! [pause]

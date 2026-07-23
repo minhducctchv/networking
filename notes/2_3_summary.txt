@@ -1,0 +1,341 @@
+PODCAST: The Physical Layer. [pause]
+
+Hello! [pause]
+
+Welcome to the show. [pause]
+
+This is a podcast about computer networks. [pause]
+
+I am your host. [pause]
+
+Today we talk about the physical layer. [pause]
+
+This is chapter two. [pause]
+
+The idea is simple. [pause]
+
+Let's start! [pause]
+
+The physical layer is the bottom of the network. [pause]
+
+It answers one question. [pause]
+
+How do bits move from one place to another place? [pause]
+
+A bit is a small piece of data. [pause]
+
+It is a zero or a one. [pause]
+
+For developers, three things are important. [pause]
+
+They are bandwidth, latency, and RTT. [pause]
+
+We will talk about all three today. [pause]
+
+First, let's talk about media. [pause]
+
+Media is the path for the data. [pause]
+
+There are two types. [pause]
+
+The first type is "guided" media. [pause]
+
+The data goes through a cable. [pause]
+
+The second type is "unguided" media. [pause]
+
+The data goes through the air. [pause]
+
+We call this wireless. [pause]
+
+There are three common media. [pause]
+
+Let's look at them. [pause]
+
+Number one is copper. [pause]
+
+Copper is a metal cable. [pause]
+
+Copper is cheap. [pause]
+
+Copper is easy to use. [pause]
+
+But copper has a problem. [pause]
+
+It is sensitive to noise. [pause]
+
+We call this noise "EMI." [pause]
+
+Copper is also short. [pause]
+
+It works for about 100 meters. [pause]
+
+Not more. [pause]
+
+Number two is fiber optic. [pause]
+
+Fiber uses light to send data. [pause]
+
+Light is not affected by EMI. [pause]
+
+This is good. [pause]
+
+Fiber is fast. [pause]
+
+It has high bandwidth. [pause]
+
+Fiber can go very far. [pause]
+
+Many kilometers. [pause]
+
+But fiber is expensive. [pause]
+
+Number three is wireless. [pause]
+
+Wireless sends data through the air. [pause]
+
+Wireless is very flexible. [pause]
+
+You can move around. [pause]
+
+But wireless is not stable. [pause]
+
+And wireless needs encryption. [pause]
+
+Encryption keeps your data safe. [pause]
+
+So, which one is the best? [pause]
+
+There is no perfect answer. [pause]
+
+You must choose. [pause]
+
+You think about speed, distance, cost, and noise. [pause]
+
+This is a trade-off. [pause]
+
+You win some things, and you lose some things. [pause]
+
+Now, let's talk about speed. [pause]
+
+The first word is bandwidth. [pause]
+
+Bandwidth is the maximum speed. [pause]
+
+It is the top limit. [pause]
+
+It is a number in theory. [pause]
+
+The second word is throughput. [pause]
+
+Throughput is the real speed. [pause]
+
+The speed you really get. [pause]
+
+Throughput is often lower than bandwidth. [pause]
+
+Why? [pause]
+
+Because of the slowest part of the path. [pause]
+
+We call the slowest part the "bottleneck." [pause]
+
+The third word is latency. [pause]
+
+Latency is delay. [pause]
+
+It is waiting time. [pause]
+
+Latency has four parts. [pause]
+
+One, transmission delay. [pause]
+
+Two, propagation delay. [pause]
+
+Three, queuing delay. [pause]
+
+Four, processing delay. [pause]
+
+Together, they make latency. [pause]
+
+Here is an important idea. [pause]
+
+More bandwidth makes the transmission delay small. [pause]
+
+But more bandwidth does not help the propagation delay. [pause]
+
+Propagation delay is about distance. [pause]
+
+It is the time for the signal to travel. [pause]
+
+The fourth word is RTT. [pause]
+
+RTT means "round-trip time." [pause]
+
+It is the time to go there and come back. [pause]
+
+RTT is very important. [pause]
+
+It decides the time for a TCP handshake. [pause]
+
+It decides the time for a TLS handshake. [pause]
+
+It decides the timeouts in your app. [pause]
+
+Here is a tip. [pause]
+
+Many actions need many trips. [pause]
+
+So it is good to use fewer trips. [pause]
+
+How? [pause]
+
+You can use keep-alive. [pause]
+
+You can use HTTP/2. [pause]
+
+You can use a CDN. [pause]
+
+This is often better than more bandwidth. [pause]
+
+The fifth idea is the bandwidth-delay product. [pause]
+
+This is bandwidth times RTT. [pause]
+
+It is the data "in the air" right now. [pause]
+
+Data on the way. [pause]
+
+Some networks have high bandwidth and high RTT. [pause]
+
+We call them "long fat networks." [pause]
+
+On these networks, one TCP flow can be too small. [pause]
+
+Then it can not fill the link. [pause]
+
+The fix? [pause]
+
+Turn on window scaling. [pause]
+
+Or use many flows together. [pause]
+
+The last word is attenuation. [pause]
+
+Attenuation means the signal gets weak. [pause]
+
+The signal gets weak over distance. [pause]
+
+A long distance means a weak signal. [pause]
+
+This is why cables have a length limit. [pause]
+
+Now let's think about three questions. [pause]
+
+Question one. [pause]
+
+Why can fiber go many kilometers, but copper only 100 meters? [pause]
+
+The answer is attenuation. [pause]
+
+In copper, the signal gets weak fast. [pause]
+
+In fiber, the light stays strong for a long way. [pause]
+
+Do you need copper to go far? [pause]
+
+You can add a repeater. [pause]
+
+A repeater makes the signal strong again. [pause]
+
+Question two. [pause]
+
+Imagine a link. [pause]
+
+It is very long. [pause]
+
+Ten thousand kilometers. [pause]
+
+You send a small packet. [pause]
+
+The transmission delay is very small. [pause]
+
+Only microseconds. [pause]
+
+But the propagation delay is big. [pause]
+
+About 50 milliseconds one way. [pause]
+
+So the round trip is about 100 milliseconds. [pause]
+
+Now, does more bandwidth help here? [pause]
+
+No. [pause]
+
+The delay comes from distance, not from bandwidth. [pause]
+
+Question three. [pause]
+
+Your app has a server in Singapore. [pause]
+
+A user in America sends a small request. [pause]
+
+A user in Vietnam sends the same request. [pause]
+
+The user in America is always slower. [pause]
+
+About 150 milliseconds slower. [pause]
+
+Why? [pause]
+
+The server is the same. [pause]
+
+The code is the same. [pause]
+
+The answer is distance again. [pause]
+
+America is far from Singapore. [pause]
+
+Vietnam is near Singapore. [pause]
+
+Propagation delay depends on distance. [pause]
+
+Software can not fix distance. [pause]
+
+So, what can you do? [pause]
+
+You can put a server near the user. [pause]
+
+This is a CDN. [pause]
+
+America gets a server in America. [pause]
+
+Vietnam gets a server in Vietnam. [pause]
+
+The user talks to the near server. [pause]
+
+Not the far one. [pause]
+
+We will learn more about CDNs in chapter six. [pause]
+
+Okay! [pause]
+
+That is the end of chapter two. [pause]
+
+Let's remember three things. [pause]
+
+One, bandwidth is the top speed. [pause]
+
+Two, latency is delay. [pause]
+
+Distance is a big part of it. [pause]
+
+Three, RTT is the time to go and come back. [pause]
+
+Fewer trips is better. [pause]
+
+Thank you for listening. [pause]
+
+See you in the next episode. [pause]
+
+Bye! [pause]

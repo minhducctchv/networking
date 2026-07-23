@@ -56,9 +56,21 @@ flowchart TD
 **broadcast domain** (miền quảng bá — tập hợp các thiết bị mà một frame broadcast có thể tới được) mặc định gồm toàn bộ các cổng của một switch (và các switch nối với nhau). Khi một frame broadcast (`FF:FF:FF:FF:FF:FF`) đến, switch flood ra mọi cổng, nên broadcast lan khắp domain.
 
 <Callout type="info">
-  Switch chia **collision domain** (miền đụng độ — mỗi cổng là một miền riêng nhờ
-  full-duplex), nhưng **không** chia broadcast domain. Muốn chia broadcast domain
-  cần đến router hoặc VLAN.
+  Switch chia **collision domain** (miền đụng độ — mỗi cổng là một miền riêng
+  nhờ full-duplex), nhưng **không** chia broadcast domain. Muốn chia broadcast
+  domain cần đến router hoặc VLAN.
+</Callout>
+
+<Callout type="warning">
+  **Vòng lặp L2 và broadcast storm**: vì switch **flood** frame broadcast (và
+  frame chưa biết đích) ra mọi cổng, nếu hai switch được nối thành **vòng**
+  (loop do đường dự phòng), một frame broadcast sẽ chạy vòng vô tận và nhân lên
+  cực nhanh — gọi là **broadcast storm**, đủ sức làm tê liệt cả LAN. **STP**
+  (Spanning Tree Protocol — IEEE 802.1D) sinh ra để chặn điều này: nó tự động
+  **block** bớt cổng sao cho đồ hình switch không còn vòng, rồi mở lại khi một
+  đường chính hỏng. Dev hiếm khi tự cấu hình STP, nhưng cụm từ "broadcast storm"
+  hay "spanning tree" thường xuất hiện trong postmortem sự cố mạng, nên biết nó
+  để làm gì rất có ích.
 </Callout>
 
 ## VLAN: chia broadcast domain một cách logic

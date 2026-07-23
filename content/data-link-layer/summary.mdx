@@ -1,6 +1,6 @@
 # Tóm tắt Chương 3: Data Link Layer
 
-Chương này đi trọn nhiệm vụ của Layer 2: gom dòng bit thành frame, gắn địa chỉ, và chuyển frame đúng nơi trong một mạng cục bộ. Dưới đây là các khái niệm chính theo từng bài, sau đó là bài tập ôn tập kết hợp.
+Chương này đi trọn nhiệm vụ của Layer 2: gom dòng bit thành frame, gắn địa chỉ, phân giải IP thành MAC, và chuyển frame đúng nơi trong một mạng cục bộ. Dưới đây là các khái niệm chính theo từng bài, sau đó là bài tập ôn tập kết hợp.
 
 ## Các khái niệm chính
 
@@ -15,6 +15,12 @@ Chương này đi trọn nhiệm vụ của Layer 2: gom dòng bit thành frame,
 - Frame Ethernet gồm 7 trường: **Preamble** (7 B), **SFD** (1 B), **Dest MAC** (6 B), **Src MAC** (6 B), **Type/Length** (2 B), **Payload** (46 - 1500 B), **FCS** (4 B); kích thước frame 64 - 1518 byte.
 - Trường thứ tư: giá trị ≥ `0x0600` là **EtherType** (vd `0x0800` = IPv4, `0x86DD` = IPv6, `0x0806` = ARP, `0x8100` = VLAN tag), ≤ 1500 là **Length**.
 - **MTU** (Maximum Transmission Unit) mặc định 1500 byte — con số dev cần nhớ khi tính MSS của TCP hoặc gặp lỗi fragmentation.
+
+### ARP: ánh xạ IP ↔ MAC
+
+- **ARP** phân giải **IP → MAC** trong cùng một LAN: **request** broadcast hỏi "ai có IP này", **reply** unicast trả về MAC. Kết quả lưu vào **ARP cache** (tra bằng `ip neigh` / `arp -a`) và tự hết hạn sau vài phút.
+- Đích **ngoài subnet** ⇒ máy ARP tìm MAC của **default gateway**, không phải MAC của host xa; IP đích trong packet vẫn giữ nguyên (minh họa cho quy tắc IP giữ nguyên, MAC đổi theo hop).
+- ARP message dài **28 byte** (IPv4/Ethernet), chở trong frame **EtherType `0x0806`**. ARP không xác thực ⇒ nền tảng của **ARP spoofing** (Chương 7).
 
 ### Switching & VLAN
 
@@ -31,6 +37,8 @@ Chương này đi trọn nhiệm vụ của Layer 2: gom dòng bit thành frame,
 
 4. **(Tình huống thực tế — kết hợp "Framing & MAC address" + "Switching & VLAN")** Bạn đang debug tại sao một service trong Kubernetes không nói chuyện được với service khác trên node khác. Trên đường packet đi từ Pod → veth → docker0 (bridge) → cáp vật lý → switch, MAC nào sẽ thay đổi và IP nào giữ nguyên? Vì sao hiểu điều này quan trọng khi đọc `tcpdump` capture ở các điểm khác nhau?
 
+5. **(Tình huống thực tế — kết hợp "ARP" + "Framing & MAC address")** Máy của bạn (`192.168.1.50/24`) mở kết nối tới một API server ngoài Internet. Bạn chạy `ip neigh` và chỉ thấy bản ghi MAC của `192.168.1.1` (gateway), **không** thấy bản ghi nào cho IP của API server. Điều này có bình thường không? Giải thích theo cách ARP xử lý đích nằm ngoài subnet.
+
 <details>
   <summary>Đáp án</summary>
 
@@ -41,5 +49,7 @@ Chương này đi trọn nhiệm vụ của Layer 2: gom dòng bit thành frame,
 3. Frame Ethernet chuẩn tối đa 1518 byte + 4 byte VLAN tag ⇒ **1522 byte**. Cấu hình MTU 1504/1522 vì trên trunk, phần tag chiếm thêm 4 byte nhưng phần payload L3 vẫn cần đủ 1500 byte để không bị fragment; các switch/NIC phải hỗ trợ "baby giant frame" 1522 byte để trunk hoạt động không lỗi.
 
 4. **MAC thay đổi** ở mỗi chặng L2: Pod có MAC riêng do CNI cấp; qua veth vào docker0/bridge, bridge có thể ghi lại theo bảng MAC của nó; ra ngoài node qua card mạng vật lý, packet được gắn MAC của card đó; qua switch tới next-hop router thì MAC lại đổi. **IP nguồn/đích của Pod giữ nguyên** suốt đường (Kubernetes không NAT giữa Pod). Đọc `tcpdump` ở các điểm khác nhau sẽ thấy MAC khác nhau nhưng IP giống nhau — nếu tưởng đó là "packet khác" bạn sẽ debug sai; hiểu đúng giúp truy vết packet xuyên hop dễ hơn nhiều.
+
+5. Hoàn toàn bình thường. API server nằm **ngoài** subnet `192.168.1.0/24`, nên máy bạn không ARP tìm MAC của nó (ARP request là broadcast, không đi xuyên router). Thay vào đó máy ARP tìm MAC của **default gateway** `192.168.1.1` rồi gửi mọi frame ra Internet tới MAC đó — dù **IP đích trong packet vẫn là IP của API server**. Vì vậy ARP cache chỉ chứa MAC của gateway và của các máy cùng LAN, không bao giờ chứa MAC của host ở xa.
 
 </details>

@@ -67,7 +67,7 @@ Payload  : 00 01 08 00 06 04 ...      (28 byte ARP + 18 byte padding = 46 byte)
 FCS      : A1 B2 C3 D4                (CRC-32, máy nhận dùng để kiểm lỗi)
 ```
 
-Ở đây ARP message chỉ dài 28 byte nên cần đệm thêm 18 byte `0` cho đủ payload 46 byte. Máy nhận đọc Dst MAC broadcast nên nhận frame, kiểm FCS, rồi chuyển payload lên cho module ARP.
+Ở đây ARP message chỉ dài 28 byte nên cần đệm thêm 18 byte `0` cho đủ payload 46 byte. Máy nhận đọc Dst MAC broadcast nên nhận frame, kiểm FCS, rồi chuyển payload lên cho module ARP. Bản thân **ARP** làm gì — vì sao phải hỏi broadcast và nhận về cái gì — được giải thích ở bài kế **[ARP: ánh xạ IP ↔ MAC](/data-link-layer/arp)**.
 
 ## Tóm tắt nhanh
 
