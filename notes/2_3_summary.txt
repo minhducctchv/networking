@@ -1,341 +1,341 @@
-PODCAST: The Physical Layer. [pause]
+PODCAST: The Physical Layer.
 
-Hello! [pause]
+Hello!
 
-Welcome to the show. [pause]
+Welcome to the show.
 
-This is a podcast about computer networks. [pause]
+This is a podcast about computer networks.
 
-I am your host. [pause]
+I am your host.
 
-Today we talk about the physical layer. [pause]
+Today we talk about the physical layer.
 
-This is chapter two. [pause]
+This is chapter two.
 
-The idea is simple. [pause]
+The idea is simple.
 
-Let's start! [pause]
+Let's start!
 
-The physical layer is the bottom of the network. [pause]
+The physical layer is the bottom of the network.
 
-It answers one question. [pause]
+It answers one question.
 
-How do bits move from one place to another place? [pause]
+How do bits move from one place to another place?
 
-A bit is a small piece of data. [pause]
+A bit is a small piece of data.
 
-It is a zero or a one. [pause]
+It is a zero or a one.
 
-For developers, three things are important. [pause]
+For developers, three things are important.
 
-They are bandwidth, latency, and RTT. [pause]
+They are bandwidth, latency, and RTT.
 
-We will talk about all three today. [pause]
+We will talk about all three today.
 
-First, let's talk about media. [pause]
+First, let's talk about media.
 
-Media is the path for the data. [pause]
+Media is the path for the data.
 
-There are two types. [pause]
+There are two types.
 
-The first type is "guided" media. [pause]
+The first type is "guided" media.
 
-The data goes through a cable. [pause]
+The data goes through a cable.
 
-The second type is "unguided" media. [pause]
+The second type is "unguided" media.
 
-The data goes through the air. [pause]
+The data goes through the air.
 
-We call this wireless. [pause]
+We call this wireless.
 
-There are three common media. [pause]
+There are three common media.
 
-Let's look at them. [pause]
+Let's look at them.
 
-Number one is copper. [pause]
+Number one is copper.
 
-Copper is a metal cable. [pause]
+Copper is a metal cable.
 
-Copper is cheap. [pause]
+Copper is cheap.
 
-Copper is easy to use. [pause]
+Copper is easy to use.
 
-But copper has a problem. [pause]
+But copper has a problem.
 
-It is sensitive to noise. [pause]
+It is sensitive to noise.
 
-We call this noise "EMI." [pause]
+We call this noise "EMI."
 
-Copper is also short. [pause]
+Copper is also short.
 
-It works for about 100 meters. [pause]
+It works for about 100 meters.
 
-Not more. [pause]
+Not more.
 
-Number two is fiber optic. [pause]
+Number two is fiber optic.
 
-Fiber uses light to send data. [pause]
+Fiber uses light to send data.
 
-Light is not affected by EMI. [pause]
+Light is not affected by EMI.
 
-This is good. [pause]
+This is good.
 
-Fiber is fast. [pause]
+Fiber is fast.
 
-It has high bandwidth. [pause]
+It has high bandwidth.
 
-Fiber can go very far. [pause]
+Fiber can go very far.
 
-Many kilometers. [pause]
+Many kilometers.
 
-But fiber is expensive. [pause]
+But fiber is expensive.
 
-Number three is wireless. [pause]
+Number three is wireless.
 
-Wireless sends data through the air. [pause]
+Wireless sends data through the air.
 
-Wireless is very flexible. [pause]
+Wireless is very flexible.
 
-You can move around. [pause]
+You can move around.
 
-But wireless is not stable. [pause]
+But wireless is not stable.
 
-And wireless needs encryption. [pause]
+And wireless needs encryption.
 
-Encryption keeps your data safe. [pause]
+Encryption keeps your data safe.
 
-So, which one is the best? [pause]
+So, which one is the best?
 
-There is no perfect answer. [pause]
+There is no perfect answer.
 
-You must choose. [pause]
+You must choose.
 
-You think about speed, distance, cost, and noise. [pause]
+You think about speed, distance, cost, and noise.
 
-This is a trade-off. [pause]
+This is a trade-off.
 
-You win some things, and you lose some things. [pause]
+You win some things, and you lose some things.
 
-Now, let's talk about speed. [pause]
+Now, let's talk about speed.
 
-The first word is bandwidth. [pause]
+The first word is bandwidth.
 
-Bandwidth is the maximum speed. [pause]
+Bandwidth is the maximum speed.
 
-It is the top limit. [pause]
+It is the top limit.
 
-It is a number in theory. [pause]
+It is a number in theory.
 
-The second word is throughput. [pause]
+The second word is throughput.
 
-Throughput is the real speed. [pause]
+Throughput is the real speed.
 
-The speed you really get. [pause]
+The speed you really get.
 
-Throughput is often lower than bandwidth. [pause]
+Throughput is often lower than bandwidth.
 
-Why? [pause]
+Why?
 
-Because of the slowest part of the path. [pause]
+Because of the slowest part of the path.
 
-We call the slowest part the "bottleneck." [pause]
+We call the slowest part the "bottleneck."
 
-The third word is latency. [pause]
+The third word is latency.
 
-Latency is delay. [pause]
+Latency is delay.
 
-It is waiting time. [pause]
+It is waiting time.
 
-Latency has four parts. [pause]
+Latency has four parts.
 
-One, transmission delay. [pause]
+One, transmission delay.
 
-Two, propagation delay. [pause]
+Two, propagation delay.
 
-Three, queuing delay. [pause]
+Three, queuing delay.
 
-Four, processing delay. [pause]
+Four, processing delay.
 
-Together, they make latency. [pause]
+Together, they make latency.
 
-Here is an important idea. [pause]
+Here is an important idea.
 
-More bandwidth makes the transmission delay small. [pause]
+More bandwidth makes the transmission delay small.
 
-But more bandwidth does not help the propagation delay. [pause]
+But more bandwidth does not help the propagation delay.
 
-Propagation delay is about distance. [pause]
+Propagation delay is about distance.
 
-It is the time for the signal to travel. [pause]
+It is the time for the signal to travel.
 
-The fourth word is RTT. [pause]
+The fourth word is RTT.
 
-RTT means "round-trip time." [pause]
+RTT means "round-trip time."
 
-It is the time to go there and come back. [pause]
+It is the time to go there and come back.
 
-RTT is very important. [pause]
+RTT is very important.
 
-It decides the time for a TCP handshake. [pause]
+It decides the time for a TCP handshake.
 
-It decides the time for a TLS handshake. [pause]
+It decides the time for a TLS handshake.
 
-It decides the timeouts in your app. [pause]
+It decides the timeouts in your app.
 
-Here is a tip. [pause]
+Here is a tip.
 
-Many actions need many trips. [pause]
+Many actions need many trips.
 
-So it is good to use fewer trips. [pause]
+So it is good to use fewer trips.
 
-How? [pause]
+How?
 
-You can use keep-alive. [pause]
+You can use keep-alive.
 
-You can use HTTP/2. [pause]
+You can use HTTP/2.
 
-You can use a CDN. [pause]
+You can use a CDN.
 
-This is often better than more bandwidth. [pause]
+This is often better than more bandwidth.
 
-The fifth idea is the bandwidth-delay product. [pause]
+The fifth idea is the bandwidth-delay product.
 
-This is bandwidth times RTT. [pause]
+This is bandwidth times RTT.
 
-It is the data "in the air" right now. [pause]
+It is the data "in the air" right now.
 
-Data on the way. [pause]
+Data on the way.
 
-Some networks have high bandwidth and high RTT. [pause]
+Some networks have high bandwidth and high RTT.
 
-We call them "long fat networks." [pause]
+We call them "long fat networks."
 
-On these networks, one TCP flow can be too small. [pause]
+On these networks, one TCP flow can be too small.
 
-Then it can not fill the link. [pause]
+Then it can not fill the link.
 
-The fix? [pause]
+The fix?
 
-Turn on window scaling. [pause]
+Turn on window scaling.
 
-Or use many flows together. [pause]
+Or use many flows together.
 
-The last word is attenuation. [pause]
+The last word is attenuation.
 
-Attenuation means the signal gets weak. [pause]
+Attenuation means the signal gets weak.
 
-The signal gets weak over distance. [pause]
+The signal gets weak over distance.
 
-A long distance means a weak signal. [pause]
+A long distance means a weak signal.
 
-This is why cables have a length limit. [pause]
+This is why cables have a length limit.
 
-Now let's think about three questions. [pause]
+Now let's think about three questions.
 
-Question one. [pause]
+Question one.
 
-Why can fiber go many kilometers, but copper only 100 meters? [pause]
+Why can fiber go many kilometers, but copper only 100 meters?
 
-The answer is attenuation. [pause]
+The answer is attenuation.
 
-In copper, the signal gets weak fast. [pause]
+In copper, the signal gets weak fast.
 
-In fiber, the light stays strong for a long way. [pause]
+In fiber, the light stays strong for a long way.
 
-Do you need copper to go far? [pause]
+Do you need copper to go far?
 
-You can add a repeater. [pause]
+You can add a repeater.
 
-A repeater makes the signal strong again. [pause]
+A repeater makes the signal strong again.
 
-Question two. [pause]
+Question two.
 
-Imagine a link. [pause]
+Imagine a link.
 
-It is very long. [pause]
+It is very long.
 
-Ten thousand kilometers. [pause]
+Ten thousand kilometers.
 
-You send a small packet. [pause]
+You send a small packet.
 
-The transmission delay is very small. [pause]
+The transmission delay is very small.
 
-Only microseconds. [pause]
+Only microseconds.
 
-But the propagation delay is big. [pause]
+But the propagation delay is big.
 
-About 50 milliseconds one way. [pause]
+About 50 milliseconds one way.
 
-So the round trip is about 100 milliseconds. [pause]
+So the round trip is about 100 milliseconds.
 
-Now, does more bandwidth help here? [pause]
+Now, does more bandwidth help here?
 
-No. [pause]
+No.
 
-The delay comes from distance, not from bandwidth. [pause]
+The delay comes from distance, not from bandwidth.
 
-Question three. [pause]
+Question three.
 
-Your app has a server in Singapore. [pause]
+Your app has a server in Singapore.
 
-A user in America sends a small request. [pause]
+A user in America sends a small request.
 
-A user in Vietnam sends the same request. [pause]
+A user in Vietnam sends the same request.
 
-The user in America is always slower. [pause]
+The user in America is always slower.
 
-About 150 milliseconds slower. [pause]
+About 150 milliseconds slower.
 
-Why? [pause]
+Why?
 
-The server is the same. [pause]
+The server is the same.
 
-The code is the same. [pause]
+The code is the same.
 
-The answer is distance again. [pause]
+The answer is distance again.
 
-America is far from Singapore. [pause]
+America is far from Singapore.
 
-Vietnam is near Singapore. [pause]
+Vietnam is near Singapore.
 
-Propagation delay depends on distance. [pause]
+Propagation delay depends on distance.
 
-Software can not fix distance. [pause]
+Software can not fix distance.
 
-So, what can you do? [pause]
+So, what can you do?
 
-You can put a server near the user. [pause]
+You can put a server near the user.
 
-This is a CDN. [pause]
+This is a CDN.
 
-America gets a server in America. [pause]
+America gets a server in America.
 
-Vietnam gets a server in Vietnam. [pause]
+Vietnam gets a server in Vietnam.
 
-The user talks to the near server. [pause]
+The user talks to the near server.
 
-Not the far one. [pause]
+Not the far one.
 
-We will learn more about CDNs in chapter six. [pause]
+We will learn more about CDNs in chapter six.
 
-Okay! [pause]
+Okay!
 
-That is the end of chapter two. [pause]
+That is the end of chapter two.
 
-Let's remember three things. [pause]
+Let's remember three things.
 
-One, bandwidth is the top speed. [pause]
+One, bandwidth is the top speed.
 
-Two, latency is delay. [pause]
+Two, latency is delay.
 
-Distance is a big part of it. [pause]
+Distance is a big part of it.
 
-Three, RTT is the time to go and come back. [pause]
+Three, RTT is the time to go and come back.
 
-Fewer trips is better. [pause]
+Fewer trips is better.
 
-Thank you for listening. [pause]
+Thank you for listening.
 
-See you in the next episode. [pause]
+See you in the next episode.
 
-Bye! [pause]
+Bye!
